@@ -307,3 +307,17 @@ target_compile_definitions(${PROJECT_NAME}
         TX_INCLUDE_USER_DEFINE_FILE
         TX_ENABLE_FPU_SUPPORT
 )
+
+# ---------------------------------------------------------------------------
+# Maximum performance compiler optimization flags
+# ---------------------------------------------------------------------------
+target_compile_options(${PROJECT_NAME}
+    PRIVATE
+        $<$<OR:$<C_COMPILER_ID:GNU>,$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>>:
+            -O3
+            -ffast-math
+            -fno-math-errno
+            -funroll-loops
+            -fomit-frame-pointer
+        >
+)
