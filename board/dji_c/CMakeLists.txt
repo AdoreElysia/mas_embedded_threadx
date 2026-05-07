@@ -43,16 +43,33 @@ add_subdirectory(cmake/stm32cubemx)
 # Add ThreadX RTOS
 add_subdirectory(../../threadx threadx)
 
+# CherryUSB Device CDC ACM (max performance: -O3)
+set(CONFIG_CHERRYUSB_DEVICE ON CACHE BOOL "Enable CherryUSB device stack" FORCE)
+set(CONFIG_CHERRYUSB_DEVICE_CDC_ACM ON CACHE BOOL "Enable CDC ACM class" FORCE)
+set(CONFIG_CHERRYUSB_DEVICE_DWC2_ST ON CACHE BOOL "Use DWC2 OTG with STM32 glue" FORCE)
+set(CONFIG_CHERRYUSB_OSAL "threadx" CACHE STRING "Use ThreadX OS abstraction layer" FORCE)
+
+include(../../CherryUSB/cherryusb.cmake)
+list(REMOVE_DUPLICATES cherryusb_srcs)
+list(REMOVE_DUPLICATES cherryusb_incs)
+
+add_library(cherryusb STATIC ${cherryusb_srcs})
+target_include_directories(cherryusb PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/USB
+    ${cherryusb_incs}
+)
+target_compile_options(cherryusb PRIVATE -O3 -ffast-math -fno-math-errno)
+target_link_libraries(cherryusb PUBLIC stm32cubemx azrtos::threadx utils)
+
 # Add shared project libraries
 add_subdirectory(../../utils ${CMAKE_CURRENT_BINARY_DIR}/utils)
 add_subdirectory(../../board/bsp ${CMAKE_CURRENT_BINARY_DIR}/bsp)
 add_subdirectory(../../robot ${CMAKE_CURRENT_BINARY_DIR}/robot)
+
 # CMSIS-DSP settings for Cortex-M4
 set(LOOPUNROLL ON CACHE BOOL "Loop unrolling for max performance" FORCE)
 set(DISABLEFLOAT16 ON CACHE BOOL "Disable float16 kernels (not needed for M4)" FORCE)
-
 add_subdirectory(../../CMSIS-DSP ${CMAKE_CURRENT_BINARY_DIR}/cmsisdsp)
-
 # Apply max performance compiler flags to CMSIS-DSP
 target_compile_options(CMSISDSP PRIVATE -O3 -ffast-math -fno-math-errno)
 # Provide CMSIS-Core headers (cmsis_compiler.h) to CMSIS-DSP
@@ -89,6 +106,6 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     bsp
     robot
     CMSISDSP
-
+    cherryusb
     # Add user defined libraries
 )

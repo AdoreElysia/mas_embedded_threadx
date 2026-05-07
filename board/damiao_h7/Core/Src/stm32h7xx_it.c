@@ -612,7 +612,9 @@ void DMA2_Stream7_IRQHandler(void)
 
 /**
  * @brief This function handles USB OTG HS global interrupt.
+ * @note  CherryUSB provides its own OTG_HS_IRQHandler; CubeMX version disabled.
  */
+#if 0
 void OTG_HS_IRQHandler(void)
 {
     /* USER CODE BEGIN OTG_HS_IRQn 0 */
@@ -623,6 +625,7 @@ void OTG_HS_IRQHandler(void)
 
     /* USER CODE END OTG_HS_IRQn 1 */
 }
+#endif
 
 /**
  * @brief This function handles UART7 global interrupt.
