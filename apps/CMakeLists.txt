@@ -11,7 +11,11 @@ if(EXISTS ${_robot_board_dir})
 endif()
 
 # 收集所有子目录作为头文件包含路径
+# 把 apps/<robot>/ 根目录加入，方便板型间共享 <robot>_def.h 等头文件
 set(_robot_includes "")
+if(EXISTS ${_robot_base_dir})
+    list(APPEND _robot_includes ${_robot_base_dir})
+endif()
 if(EXISTS ${_robot_board_dir})
     file(GLOB_RECURSE _robot_headers ${_robot_board_dir}/*.h)
     list(APPEND _robot_includes ${_robot_board_dir})
