@@ -27,10 +27,9 @@ set(THREADX_ARCH cortex_m7)
 # 加载配置（ROBOT/BOARD 在 apps/config.cmake 中定义）
 include(${CMAKE_SOURCE_DIR}/../../apps/config.cmake)
 
-# 生成头文件到 apps 目录
+# 生成头文件到 build 目录
 set(_generated_dir ${CMAKE_CURRENT_BINARY_DIR}/generated)
-configure_file(${CMAKE_SOURCE_DIR}/../../apps/robot_def.h.in     ${_generated_dir}/robot_def.h)
-configure_file(${CMAKE_SOURCE_DIR}/../../apps/module_config.h.in ${_generated_dir}/module_config.h)
+include(${CMAKE_SOURCE_DIR}/../../apps/generate_headers.cmake)
 
 # Enable compile command to ease indexing with e.g. clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)

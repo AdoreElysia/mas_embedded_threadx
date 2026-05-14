@@ -14,8 +14,7 @@ mas_embedded_threadx/
 ├── apps/                          # 应用层：机器人业务代码
 │   ├── config.cmake               # 全局构建配置（选择 ROBOT / BOARD）
 │   ├── app_init.c / app_init.h    # 应用层入口
-│   ├── robot_def.h.in             # 机器人宏定义模板
-│   ├── module_config.h.in         # 模块配置头文件模板
+│   ├── generate_headers.cmake     # CMake 生成 robot_def.h / module_config.h 脚本
 │   ├── templates/                 # 机器人配置模板
 │   │   ├── robot.cmake            # 各机器人差异配置的参考模板
 │   │   ├── single_board/          # 单板模板代码
@@ -163,13 +162,13 @@ find . -name '*.c' -o -name '*.h' | xargs clang-format -i
 
 ### 添加新模块
 
-若需为项目添加新的功能模块（如传感器、执行器），请遵循 **5 步模块化流程**：
+若需为项目添加新的功能模块（如传感器、执行器），请遵循 **6 步模块化流程**：
 
 1. 在 `modules/<NAME>/` 下创建模块代码（`module_<name>.h` + `module_<name>.c`）
 2. 在 `modules/CMakeLists.txt` 中添加 `if(MODULE_XXX)` 条件编译块
 3. 在 `modules/module_init.c` 中添加条件初始化代码
 4. 在 `modules/module_config.cmake` 中注册默认参数和模块列表
-5. 在 `apps/module_config.h.in` 中添加 `@VAR@` 占位符
+5. 在 `apps/generate_headers.cmake` 中添加该模块的参数宏导出（普通宏用 `#define VAR ${VAR}`，可选硬件句柄用 `_gen_cmakedefine`）
 6. 在目标机器人的 `apps/<robot>/robot.cmake` 中使能或覆盖配置
 
 **详细规范与示例请参考 [`modules/MODULES.MD`](modules/MODULES.MD)。**

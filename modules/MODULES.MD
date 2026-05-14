@@ -31,7 +31,7 @@ apps/<robot>/
 | CMake | `modules/CMakeLists.txt` | 决定哪些 `.c` 被编译 |
 | C 预处理 | `module_init.c` | 决定哪些模块被初始化 |
 
-机器人 robot.cmake → include modules/module_config.cmake (默认) → 覆盖差异 → CMake 解析 → configure_file() 生成 module_config.h → 条件编译源文件 + 条件初始化，未使能的模块完全不参与编译。
+机器人 robot.cmake → include modules/module_config.cmake (默认) → 覆盖差异 → CMake 解析 → `generate_headers.cmake` 生成 module_config.h → 条件编译源文件 + 条件初始化，未使能的模块完全不参与编译。
 
 ## 如何添加一个新模块
 
@@ -155,7 +155,23 @@ set(VL53L0X_TASK_STACK_SIZE 512)
 set(VL53L0X_TASK_PRIORITY   10)
 ```
 
-### 步骤 5：在机器人配置中使能 / 覆盖
+### 步骤 5：在 generate_headers.cmake 添加参数宏导出
+
+在 `apps/generate_headers.cmake` 中，于 `module_config.h` 的生成内容里添加该模块的参数：
+
+```cmake
+/* VL53L0X 参数 */
+#define VL53L0X_TASK_STACK_SIZE ${VL53L0X_TASK_STACK_SIZE}
+#define VL53L0X_TASK_PRIORITY   ${VL53L0X_TASK_PRIORITY}
+```
+
+> 若参数为可选硬件句柄（如 `VL53L0X_I2C`），使用 `_gen_cmakedefine` 模拟 `#cmakedefine` 行为：
+> ```cmake
+> _gen_cmakedefine(_VL53L0X_I2C VL53L0X_I2C VL53L0X_I2C)
+> ```
+> 然后在 `module_config.h` 写入内容中引用 `${_VL53L0X_I2C}`。
+
+### 步骤 6：在机器人配置中使能 / 覆盖
 
 在需要该模块的机器人 `apps/<robot>/robot.cmake` 中：
 
@@ -177,7 +193,7 @@ set(VL53L0X_TASK_STACK_SIZE 1024)
 | 2 | `modules/CMakeLists.txt` | 加 `if(MODULE_XXX)` 块 |
 | 3 | `modules/module_init.c` | 加 `#include` + `Init()` 调用 |
 | 4 | `modules/module_config.cmake` | 添加默认列表和参数 |
-| 5 | `apps/module_config.h.in` | 添加 `@VAR@` 占位符 |
+| 5 | `apps/generate_headers.cmake` | 添加该模块的参数宏导出（数值宏直接 `${VAR}`，可选硬件句柄用 `_gen_cmakedefine`） |
 | 6 | `apps/<robot>/robot.cmake` | 覆盖模块列表 / 参数 |
 
 ## 模块命名规范

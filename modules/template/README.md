@@ -77,14 +77,21 @@ set(VL53L0X_TASK_PRIORITY   10)
 set(VL53L0X_TASK_INTERVAL_MS 20)
 ```
 
-### 6. 修改 apps/module_config.h.in
+### 6. 修改 apps/generate_headers.cmake
 
-添加 CMake 配置占位符（如果涉及新的 `@VAR@`）：
+在 `module_config.h` 的生成内容中添加该模块的参数宏导出：
 
-```c
-#define VL53L0X_TASK_STACK_SIZE @VL53L0X_TASK_STACK_SIZE@
-#define VL53L0X_TASK_PRIORITY   @VL53L0X_TASK_PRIORITY@
+```cmake
+/* VL53L0X 参数 */
+#define VL53L0X_TASK_STACK_SIZE ${VL53L0X_TASK_STACK_SIZE}
+#define VL53L0X_TASK_PRIORITY   ${VL53L0X_TASK_PRIORITY}
 ```
+
+> 若参数为可选硬件句柄（如 `VL53L0X_UART`），使用 `_gen_cmakedefine` 模拟 `#cmakedefine` 行为：
+> ```cmake
+> _gen_cmakedefine(_VL53L0X_UART VL53L0X_UART VL53L0X_UART)
+> ```
+> 然后在 `module_config.h` 写入内容中引用 `${_VL53L0X_UART}`。
 
 ### 7. 在 robot.cmake 中使能/覆盖
 
