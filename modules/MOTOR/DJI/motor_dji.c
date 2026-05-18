@@ -80,7 +80,7 @@ static void dji_can_rx_callback(Can_Device *dev, const uint8_t *data, uint8_t le
 }
 
 /* PID 控制计算  */
-static void CalculatePIDOutput(DJI_Motor_t *motor)
+static float CalculatePIDOutput(DJI_Motor_t *motor)
 {
     float pid_measure, pid_ref;
 
@@ -107,33 +107,11 @@ static void CalculatePIDOutput(DJI_Motor_t *motor)
         pid_ref = PIDCalculate(&motor->base.controller.speed_PID, pid_measure, pid_ref);
     }
 
-    /* 力矩范围限制 */
-    VAL_LIMIT(pid_ref, -motor->base.info.max_torque, motor->base.info.max_torque);
-    motor->base.controller.output_torque = pid_ref;
-
-    /* 扭矩 → 电流 → 整数值 (CAN 报文) */
-    switch (motor->base.info.motor_type)
-    {
-    case GM6020_CURRENT:
-        motor->base.controller.output =
-            currentToInteger(-3.0f, 3.0f, -16384, 16384, pid_ref / (motor->base.info.torque_constant * motor->base.info.gear_ratio));
-        break;
-    case M3508:
-        motor->base.controller.output =
-            currentToInteger(-20.0f, 20.0f, -16384, 16384, pid_ref / (motor->base.info.torque_constant * motor->base.info.gear_ratio));
-        break;
-    case M2006:
-        motor->base.controller.output =
-            currentToInteger(-10.0f, 10.0f, -10000, 10000, pid_ref / (motor->base.info.torque_constant * motor->base.info.gear_ratio));
-        break;
-    default:
-        motor->base.controller.output = 0;
-        break;
-    }
+    return pid_ref;
 }
 
 /* LQR 控制计算 */
-static void CalculateLQROutput(DJI_Motor_t *motor)
+static float CalculateLQROutput(DJI_Motor_t *motor)
 {
     float ref, rad_angle, rad_speed;
 
@@ -146,11 +124,50 @@ static void CalculateLQROutput(DJI_Motor_t *motor)
     rad_speed = (motor->base.setting.speed_feedback_source == 1) ? *motor->base.controller.other_speed_feedback_ptr : motor->base.measure.speed_rad;
     if (motor->base.setting.feedback_reverse_flag == 1) rad_speed *= -1;
 
-    float torque = LQRCalculate(&motor->base.controller.lqr, rad_angle, rad_speed, ref);
+    return LQRCalculate(&motor->base.controller.lqr, rad_angle, rad_speed, ref);
+}
 
+/* dji控制函数 */
+static void dji_control(Motor_Base *base)
+{
+    DJI_Motor_t *motor = MOTOR_GET_DERIVED(base, DJI_Motor_t);
+
+    /* 离线或禁用: 清零 CAN 发送缓冲区 */
+    if (Module_Offline_get_device_status(base->offline_dev) == STATE_OFFLINE || base->setting.enableflag == 0)
+    {
+        uint8_t group                              = motor->sender_group;
+        uint8_t num                                = motor->message_num;
+        sender_assignment[group].data[2 * num]     = 0;
+        sender_assignment[group].data[2 * num + 1] = 0;
+        base->controller.output                    = 0;
+        base->controller.output_torque             = 0;
+        base->controller.speed_PID.Output          = 0;
+        base->controller.speed_PID.Iout            = 0;
+        base->controller.angle_PID.Output          = 0;
+        base->controller.angle_PID.Iout            = 0;
+        return;
+    }
+
+    float torque = 0;
+
+    /* PID/LQR 计算 */
+    switch (base->setting.algorithm_type)
+    {
+    case CONTROL_PID:
+        torque = CalculatePIDOutput(motor);
+        break;
+    case CONTROL_LQR:
+        torque = CalculateLQROutput(motor);
+        break;
+    default:
+        break;
+    }
+
+    torque = torque + motor->base.controller.feedforward_torque;
     VAL_LIMIT(torque, -motor->base.info.max_torque, motor->base.info.max_torque);
     motor->base.controller.output_torque = torque;
 
+    /* 扭矩 → 电流 → 整数值 (CAN 报文) */
     switch (motor->base.info.motor_type)
     {
     case GM6020_CURRENT:
@@ -167,25 +184,6 @@ static void CalculateLQROutput(DJI_Motor_t *motor)
         break;
     default:
         motor->base.controller.output = 0;
-        break;
-    }
-}
-
-/* dji控制函数 */
-static void dji_control(Motor_Base *base)
-{
-    DJI_Motor_t *motor = MOTOR_GET_DERIVED(base, DJI_Motor_t);
-
-    /* PID/LQR 计算 */
-    switch (base->setting.algorithm_type)
-    {
-    case CONTROL_PID:
-        CalculatePIDOutput(motor);
-        break;
-    case CONTROL_LQR:
-        CalculateLQROutput(motor);
-        break;
-    default:
         break;
     }
 
@@ -415,3 +413,5 @@ void Motor_DJI_Flush(void)
         }
     }
 }
+
+void Motor_DJI_SetForwardTorque(DJI_Motor_t *motor, float torque) { motor->base.controller.feedforward_torque = torque; }

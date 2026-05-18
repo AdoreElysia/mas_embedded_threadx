@@ -70,9 +70,9 @@ typedef struct
 /* DM_Motor_t — 继承 Motor_Base */
 typedef struct
 {
-    Motor_Base              base;    /* [必须首字段] 公共基类 */
-    DM_Motor_Measure_s      measure; /* 达妙测量数据 */
-    uint32_t                mode_type;
+    Motor_Base               base;    /* [必须首字段] 公共基类 */
+    DM_Motor_Measure_s       measure; /* 达妙测量数据 */
+    uint32_t                 mode_type;
     const DM_Motor_Params_t *params; /* 电机参数配置指针 */
 } DM_Motor_t;
 
@@ -113,5 +113,11 @@ void Motor_DM_OuterLoop(DM_Motor_t *motor, Closeloop_Type_e closeloop_type);
  * @brief 设置参考值 (rad 或 rad/s 或 Nm)
  */
 void Motor_DM_SetRef(DM_Motor_t *motor, float ref);
+
+/**
+ * @brief 设置前馈扭矩
+ * @param torque 前馈扭矩值
+ */
+void Motor_DM_SetForwardTorque(DM_Motor_t *motor, float torque);
 
 #endif /* _MOTOR_DAMIAO_H_ */

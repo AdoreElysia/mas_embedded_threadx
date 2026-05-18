@@ -71,4 +71,10 @@ void Motor_DJI_SetRef(DJI_Motor_t *motor, float ref);
  */
 void Motor_DJI_Flush(void);
 
+/**
+ * @brief 设置前馈扭矩
+ * @param torque 前馈扭矩 (Nm)
+ */
+void Motor_DJI_SetForwardTorque(DJI_Motor_t *motor, float torque);
+
 #endif /* _MOTOR_DJI_H_ */

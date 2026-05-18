@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2026-01-26 01:14:35
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2026-05-14 08:27:42
+ * @LastEditTime: 2026-05-18 12:19:41
  * @FilePath: /mas_embedded_threadx/modules/MOTOR/motor_def.h
  * @Description:
  */
@@ -56,8 +56,8 @@ typedef struct
 /* 电机控制器 */
 typedef struct
 {
-    float *other_angle_feedback_ptr;
-    float *other_speed_feedback_ptr;
+    const float *other_angle_feedback_ptr;
+    const float *other_speed_feedback_ptr;
 
     PIDInstance speed_PID;
     PIDInstance angle_PID;
@@ -65,6 +65,7 @@ typedef struct
     LQRInstance lqr;
 
     float ref;
+    float feedforward_torque; /* 前馈力矩 (Nm)，用于补偿 */
     float output;
     float output_torque;
 } Motor_Controller_s;
@@ -111,8 +112,8 @@ typedef struct
 /* 控制器初始化配置 */
 typedef struct
 {
-    float *other_angle_feedback_ptr;
-    float *other_speed_feedback_ptr;
+    const float *other_angle_feedback_ptr;
+    const float *other_speed_feedback_ptr;
 
     PID_Init_Config_s speed_PID;
     PID_Init_Config_s angle_PID;

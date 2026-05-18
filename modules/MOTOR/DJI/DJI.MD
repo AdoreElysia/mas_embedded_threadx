@@ -92,8 +92,13 @@ void Motor_DJI_OuterLoop(DJI_Motor_t *motor, Closeloop_Type_e outer_loop);
 void Motor_DJI_Flush(void);
 ```
 
+```c
+void Motor_DJI_SetForwardTorque(DJI_Motor_t *motor, float torque);
+```
+
 ## 版本历史
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-05-11 | 初始版本|
+| v1.1 | 2026-05-18 | fix:掉线失能问题，增加前馈力矩补偿 |

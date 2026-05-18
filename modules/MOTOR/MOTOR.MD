@@ -82,14 +82,15 @@ typedef struct {
 
 ```c
 typedef struct {
-    float       *other_angle_feedback_ptr;  // 外部角度反馈指针
-    float       *other_speed_feedback_ptr;  // 外部速度反馈指针
+    const float *other_angle_feedback_ptr;  // 外部角度反馈指针
+    const float *other_speed_feedback_ptr;  // 外部速度反馈指针
     PIDInstance  speed_PID;                 // 速度环 PID
     PIDInstance  angle_PID;                 // 位置环 PID
     LQRInstance  lqr;                       // LQR 控制器
     float        ref;                       // 当前参考值
     float        output;                    // 当前输出值
     float        output_torque;             // 当前力矩输出 (Nm)
+    float feedforward_torque;               // 前馈力矩 (Nm)，用于补偿
 } Motor_Controller_s;
 ```
 
@@ -311,3 +312,4 @@ void Module_Motor_Init(void);
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-05-11 | 初始版本 |
+| v1.1 | 2026-05-15 | 将内部指针改为const，增加前馈力矩补偿，fix：掉线失能问题 |

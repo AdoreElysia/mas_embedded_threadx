@@ -1,5 +1,4 @@
 #include "motor_damiao.h"
-#include "arm_math.h"
 #include "bsp_can.h"
 #include "bsp_can_internal.h"
 #include "bsp_dwt.h"
@@ -17,15 +16,18 @@
 
 /* 达妙电机参数配置表 */
 static const DM_Motor_Params_t dm_motor_params[] = {
-    { -12.5f,  12.5f, -30.0f, 30.0f, 0.0f, 500.0f, 0.0f, 5.0f, -10.0f, 10.0f }, /* DM4310 */
+    {-12.5f, 12.5f, -30.0f, 30.0f, 0.0f, 500.0f, 0.0f, 5.0f, -10.0f, 10.0f}, /* DM4310 */
 };
 
 static const DM_Motor_Params_t *dm_get_params(Motor_Type_e type)
 {
-    switch (type) {
-        case DM4310: return &dm_motor_params[0];
-        /* 后续在此添加其他型号映射 */
-        default:     return &dm_motor_params[0];
+    switch (type)
+    {
+    case DM4310:
+        return &dm_motor_params[0];
+    /* 后续在此添加其他型号映射 */
+    default:
+        return &dm_motor_params[0];
     }
 }
 
@@ -33,7 +35,7 @@ static const DM_Motor_Params_t *dm_get_params(Motor_Type_e type)
 static void dm_can_rx_callback(Can_Device *dev, const uint8_t *data, uint8_t len)
 {
     (void)len;
-    DM_Motor_t *motor = (DM_Motor_t *)dev->user_arg;
+    DM_Motor_t              *motor = (DM_Motor_t *)dev->user_arg;
     const DM_Motor_Params_t *param = motor->params;
 
     uint8_t error_code        = (data[0] >> 4) & 0x0F;
@@ -65,13 +67,13 @@ static void dm_can_rx_callback(Can_Device *dev, const uint8_t *data, uint8_t len
 
     motor->base.measure.total_angle += diff;
     motor->measure.last_single_round_angle = current_angle;
-    motor->base.measure.torque_nm = motor->measure.torque;
+    motor->base.measure.torque_nm          = motor->measure.torque;
 
     Module_Offline_device_update(motor->base.offline_dev);
 }
 
 /* PID 控制计算 */
-static void CalculatePIDOutput(DM_Motor_t *motor)
+static float CalculatePIDOutput(DM_Motor_t *motor)
 {
     float pid_measure, pid_ref;
 
@@ -90,19 +92,17 @@ static void CalculatePIDOutput(DM_Motor_t *motor)
     /* 速度环 */
     if (motor->base.setting.loop_type & SPEED_LOOP)
     {
-        pid_measure = (motor->base.setting.speed_feedback_source == 1) ? *motor->base.controller.other_speed_feedback_ptr : motor->base.measure.speed_rad;
+        pid_measure =
+            (motor->base.setting.speed_feedback_source == 1) ? *motor->base.controller.other_speed_feedback_ptr : motor->base.measure.speed_rad;
         if (motor->base.setting.feedback_reverse_flag == 1) pid_measure *= -1;
         pid_ref = PIDCalculate(&motor->base.controller.speed_PID, pid_measure, pid_ref);
     }
 
-    /* 力矩范围限制 */
-    VAL_LIMIT(pid_ref, -motor->base.info.max_torque, motor->base.info.max_torque);
-    motor->base.controller.output_torque = pid_ref;
-    motor->base.controller.output        = pid_ref;
+    return pid_ref;
 }
 
 /* LQR 控制计算 */
-static void CalculateLQROutput(DM_Motor_t *motor)
+static float CalculateLQROutput(DM_Motor_t *motor)
 {
     float ref, rad_angle, rad_speed;
 
@@ -115,18 +115,14 @@ static void CalculateLQROutput(DM_Motor_t *motor)
     rad_speed = (motor->base.setting.speed_feedback_source == 1) ? *motor->base.controller.other_speed_feedback_ptr : motor->base.measure.speed_rad;
     if (motor->base.setting.feedback_reverse_flag == 1) rad_speed *= -1;
 
-    float torque = LQRCalculate(&motor->base.controller.lqr, rad_angle, rad_speed, ref);
-
-    VAL_LIMIT(torque, -motor->base.info.max_torque, motor->base.info.max_torque);
-    motor->base.controller.output_torque = torque;
-    motor->base.controller.output        = torque;
+    return LQRCalculate(&motor->base.controller.lqr, rad_angle, rad_speed, ref);
 }
 
 /*  MIT 模式控制帧 */
 static void mit_ctrl(DM_Motor_t *motor, float pos, float vel, float kp, float kd, float torq)
 {
-    Can_Device  *can_dev = (Can_Device *)motor->base.transport_dev;
-    BSP_CanMsg_t msg;
+    Can_Device              *can_dev = (Can_Device *)motor->base.transport_dev;
+    BSP_CanMsg_t             msg;
     const DM_Motor_Params_t *param = motor->params;
 
     /* 从 Can_Device 获取 CAN 句柄 */
@@ -156,8 +152,8 @@ static void mit_ctrl(DM_Motor_t *motor, float pos, float vel, float kp, float kd
 /* 位置-速度模式控制帧 */
 static void pos_speed_ctrl(DM_Motor_t *motor, float pos_degree, float vel)
 {
-    Can_Device  *can_dev = (Can_Device *)motor->base.transport_dev;
-    BSP_CanMsg_t msg;
+    Can_Device              *can_dev = (Can_Device *)motor->base.transport_dev;
+    BSP_CanMsg_t             msg;
     const DM_Motor_Params_t *param = motor->params;
 
     CAN_Bus_Manager *bus = (CAN_Bus_Manager *)can_dev->_bus;
@@ -236,18 +232,51 @@ static void dm_ControlAndSend(Motor_Base *base)
 {
     DM_Motor_t *motor = MOTOR_GET_DERIVED(base, DM_Motor_t);
 
+    /* 离线或禁用: 发零值 */
+    if (Module_Offline_get_device_status(base->offline_dev) == STATE_OFFLINE || base->setting.enableflag == 0)
+    {
+        base->controller.output           = 0;
+        base->controller.output_torque    = 0;
+        base->controller.speed_PID.Output = 0;
+        base->controller.speed_PID.Iout   = 0;
+        base->controller.angle_PID.Output = 0;
+        base->controller.angle_PID.Iout   = 0;
+        switch (motor->mode_type)
+        {
+        case DM_MIT_MODE:
+            mit_ctrl(motor, 0, 0, 0, 0, 0);
+            break;
+        case DM_POS_MODE:
+            pos_speed_ctrl(motor, 0, 0);
+            break;
+        case DM_SPD_MODE:
+            speed_ctrl(motor, 0);
+            break;
+        default:
+            break;
+        }
+        return;
+    }
+
+    float torque = 0;
+
     /* PID/LQR 计算 */
     switch (base->setting.algorithm_type)
     {
     case CONTROL_PID:
-        CalculatePIDOutput(motor);
+        torque = CalculatePIDOutput(motor);
         break;
     case CONTROL_LQR:
-        CalculateLQROutput(motor);
+        torque = CalculateLQROutput(motor);
         break;
     default:
         break;
     }
+
+    torque = torque + motor->base.controller.feedforward_torque;
+    VAL_LIMIT(torque, -motor->base.info.max_torque, motor->base.info.max_torque);
+    motor->base.controller.output_torque = torque;
+    motor->base.controller.output        = torque;
 
     /* 根据模式发送 CAN 帧 */
     switch (motor->mode_type)
@@ -373,3 +402,5 @@ void Motor_DM_ChangeFeed(DM_Motor_t *motor, Closeloop_Type_e loop, uint8_t feedb
 void Motor_DM_OuterLoop(DM_Motor_t *motor, Closeloop_Type_e type) { motor->base.setting.loop_type = type; }
 
 void Motor_DM_SetRef(DM_Motor_t *motor, float ref) { motor->base.controller.ref = ref; }
+
+void Motor_DM_SetForwardTorque(DM_Motor_t *motor, float torque) { motor->base.controller.feedforward_torque = torque; }

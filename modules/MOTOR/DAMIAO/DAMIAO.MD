@@ -145,6 +145,10 @@ void Motor_DM_OuterLoop(DM_Motor_t *motor, Closeloop_Type_e closeloop_type);
 void Motor_DM_Cmd(DM_Motor_t *motor, DMMotor_Mode_e cmd);
 ```
 
+```c
+void Motor_DM_SetForwardTorque(DM_Motor_t *motor, float torque);
+```
+
 ## 错误码
 
 | 错误码 | 枚举 | 说明 |
@@ -163,3 +167,4 @@ void Motor_DM_Cmd(DM_Motor_t *motor, DMMotor_Mode_e cmd);
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-05-11 | 初始版本 |
+| v1.1 | 2026-05-18 | fix:掉线失能问题，增加前馈力矩补偿 |

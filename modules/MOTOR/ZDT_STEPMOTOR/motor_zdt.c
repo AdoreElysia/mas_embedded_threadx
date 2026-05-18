@@ -141,7 +141,7 @@ UART_Motor_t *Motor_ZDT_Init(Motor_Init_Config_s *config, uint8_t addr, uint16_t
     motor->uart_dev           = uart;
     motor->base.transport_dev = uart;
 
-    motor->base.offline_dev = Module_Offline_register(&config->offline_init_config);
+    //motor->base.offline_dev = Module_Offline_register(&config->offline_init_config);
 
     motor->base.ControlAndSend = zdt_ControlAndSend;
     Motor_Register(&motor->base);
