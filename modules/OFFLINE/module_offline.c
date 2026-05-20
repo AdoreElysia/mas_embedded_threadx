@@ -58,7 +58,8 @@ static int detect_callback(Offline_Device *dev, void *arg)
     if (!dev->enable) return 0;
 
     /* 心跳超时判定 */
-    if (ctx->now - dev->last_time > dev->timeout_ms)
+    uint32_t elapsed = ctx->now - dev->last_time;
+    if (elapsed > dev->timeout_ms)
     {
         dev->is_offline = true;
 
@@ -198,6 +199,38 @@ static void offline_detect_task_entry(ULONG arg)
                 }
             }
         }
+
+        #if LOG_LVL >= LOG_LVL_DBG
+        {
+            static uint32_t last_debug_dump_time = 0;
+            if (now - last_debug_dump_time > 5000UL)
+            {
+                last_debug_dump_time = now;
+                LOG_D("===== Offline Device List (t=%lu ms) =====", (unsigned long)now);
+
+                list_node_t *pos = atomic_load_explicit(&g_device_list.head.next, memory_order_acquire);
+                if (pos == &g_device_list.head)
+                {
+                    LOG_D("  (no devices registered)");
+                }
+                else
+                {
+                    while (pos != &g_device_list.head)
+                    {
+                        Offline_Device *dev = (Offline_Device *)pos;
+                        uint32_t elapsed = now - dev->last_time;
+                        LOG_D("  [%s] %-7s | timeout=%-5lu ms | hb %-5lu ms ago | en=%u",
+                              dev->name,
+                              dev->is_offline ? "OFFLINE" : "ONLINE",
+                              (unsigned long)dev->timeout_ms,
+                              (unsigned long)elapsed,
+                              dev->enable);
+                        pos = atomic_load_explicit(&pos->next, memory_order_relaxed);
+                    }
+                }
+            }
+        }
+        #endif
 
         tx_thread_sleep(10);
     }

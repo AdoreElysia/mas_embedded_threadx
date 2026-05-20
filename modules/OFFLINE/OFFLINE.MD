@@ -106,6 +106,21 @@ void Module_Offline_device_disable(Offline_Device *dev);
 uint8_t Module_Offline_get_device_status(Offline_Device *dev);
 ```
 
+## 调试
+
+### 周期调试打印 (5s)
+
+检测任务内置周期调试 dump，每 5s 遍历链表并通过 `LOG_D` 输出全部设备状态。输出受运行时日志级别控制：
+
+```
+[D] Offline: ===== Offline Device List (t=12345 ms) =====
+[D] Offline:   [IMU_Sensor] OFFLINE | timeout=500   ms | hb 523   ms ago | en=1
+[D] Offline:   [Motor_CAN] ONLINE  | timeout=200   ms | hb 45    ms ago | en=1
+[D] Offline: ===== ... =====
+```
+
+> 需要将 `#define LOG_LVL` 设置为 `LOG_LVL_DBG` 以启用调试输出。
+
 ## 使用示例
 
 ### 基本用法
@@ -222,3 +237,4 @@ static int detect_callback(Offline_Device *dev, void *arg)
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2025-09-11 | 初始版本|
+| v1.1 | 2026-05-20 | 增加调试输出，方便调试 |
