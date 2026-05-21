@@ -1,6 +1,5 @@
 #include "bsp_pwm.h"
 #include "bsp_def.h"
-#include "list.h"
 #include "tim.h"
 #include "tx_api.h"
 #include <string.h>
@@ -13,18 +12,12 @@
 #define BSP_PWM_EVENT_COMPLETE ((ULONG)0x01)
 
 /* 全局设备链表 */
-static list_head_t devices;
-
-/* 遍历全局链表的回调，用于中断用 */
-typedef struct
-{
-    TIM_HandleTypeDef *htim;
-} PWM_CallbackCtx;
+static PWM_Device *devices_list = NULL;
 
 /* PWM 设备 */
 typedef struct PWM_Device
 {
-    list_node_t          node;        /* 必须是第一个字段 */
+    PWM_Device          *next;        /* 指向下一个设备指针 */
     TIM_HandleTypeDef   *htim;        /* 定时器句柄 */
     uint32_t             Channel;     /* 通道 */
     uint32_t             Period;      /* 自动重装载值 */
@@ -59,12 +52,11 @@ PWM_Device *BSP_PWM_Device_Init(PWM_Init_Config *config)
     }
 
     memset(dev, 0, sizeof(PWM_Device));
-    dev->node.size = sizeof(PWM_Device);
-    dev->htim      = htim;
-    dev->Channel   = config->Channel;
-    dev->Period    = htim->Init.Period; /* 从 CubeMX 配置读取周期 */
-    dev->dutyx10   = config->dutyx10;
-    dev->Mode      = config->Mode;
+    dev->htim    = htim;
+    dev->Channel = config->Channel;
+    dev->Period  = htim->Init.Period; /* 从 CubeMX 配置读取周期 */
+    dev->dutyx10 = config->dutyx10;
+    dev->Mode    = config->Mode;
 
     /* 创建事件标志组 */
     if (tx_event_flags_create(&dev->event_flags, "pwm_evt") != TX_SUCCESS)
@@ -75,7 +67,8 @@ PWM_Device *BSP_PWM_Device_Init(PWM_Init_Config *config)
     }
 
     /* 挂载到全局设备链表 */
-    list_add(&devices, &dev->node);
+    dev->next    = devices_list;
+    devices_list = dev;
 
     LOG_I("Device init OK: ch=%lu", dev->Channel);
     return dev;
@@ -221,20 +214,15 @@ uint8_t BSP_PWM_WaitForComplete(PWM_Device *dev, uint32_t wait_option)
     return (status == TX_SUCCESS) ? 0 : 1;
 }
 
-static int pwm_set_event_cb(PWM_Device *dev, void *arg)
-{
-    PWM_CallbackCtx *ctx = (PWM_CallbackCtx *)arg;
-    if (dev->htim == ctx->htim)
-    {
-        tx_event_flags_set(&dev->event_flags, BSP_PWM_EVENT_COMPLETE, TX_OR);
-    }
-    return 0;
-}
-
 /* HAL 回调 */
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
-    PWM_CallbackCtx ctx = {.htim = htim};
-    list_foreach_entry(&devices, PWM_Device, node, pwm_set_event_cb, &ctx);
+    for (PWM_Device *dev = devices_list; dev ; dev = dev->next)
+    {
+        if (dev->htim == htim)
+        {
+            tx_event_flags_set(&dev->event_flags, BSP_PWM_EVENT_COMPLETE, TX_OR);
+        }
+    }
 }

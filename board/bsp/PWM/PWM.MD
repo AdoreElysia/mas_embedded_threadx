@@ -9,14 +9,14 @@ BSP PWM 是基于 STM32 HAL 库的 PWM 输出驱动层，提供阻塞 / 中断 /
 ### 设备管理模型
 
 ```
-全局链表 devices 
+全局链表 devices_list 
     │
     ├── PWM_Device (dev0)
     │   ├── htim / Channel ── 绑定的定时器和通道
     │   ├── Period / dutyx10 ── 周期和占空比
     │   ├── Mode ── BLOCKING / IT / DMA
     │   ├── event_flags ── 独立事件标志组
-    │   └── node ── 链表节点
+    │   └── next ── 指向下一个设备
     │
     ├── PWM_Device (dev1)
     └── ...
@@ -43,7 +43,7 @@ ISR 路径:
     TIMx_IRQHandler
       └── HAL_TIM_IRQHandler
             └── HAL_TIM_PWM_PulseFinishedCallback(htim)
-                  └── list_foreach_entry(&devices, …)
+                  └── for (dev = devices; dev; dev = dev->next)
                         └── 匹配 htim 的设备 → tx_event_flags_set(COMPLETE)
 ```
 
@@ -53,7 +53,7 @@ ISR 路径:
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `node` | `list_node_t` | 链表节点（必须是第一个字段） |
+| `next` | `PWM_Device *` | 指向下一个设备指针，NULL 表尾 |
 | `htim` | `TIM_HandleTypeDef *` | HAL 定时器句柄 |
 | `Channel` | `uint32_t` | PWM 通道（`TIM_CHANNEL_1` ~ `TIM_CHANNEL_4`） |
 | `Period` | `uint32_t` | 自动重装载值（从 CubeMX 配置 `htim->Init.Period` 读取） |
@@ -174,3 +174,4 @@ void pwm_dma_demo(void)
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-05-05 | 初始版本 |
+| v1.1 | 2026-05-21 | 改用单向链表 |
