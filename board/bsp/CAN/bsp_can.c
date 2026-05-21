@@ -209,7 +209,7 @@ int BSP_CAN_Send(Can_Device *device, const uint8_t *data, uint8_t len)
         kfifo_get(&bus->tx_fifo, &dummy);
         kfifo_put(&bus->tx_fifo, &msg);
     }
-    tx_event_flags_set(&g_can_event_flags, CAN_EVENT_TX, TX_OR);
+    tx_semaphore_put(&g_can_tx_sem);
     return 0;
 }
 
@@ -227,7 +227,7 @@ int BSP_CAN_SendMessage(BSP_CanMsg_t *msg)
         kfifo_get(&bus->tx_fifo, &dummy);
         kfifo_put(&bus->tx_fifo, msg);
     }
-    tx_event_flags_set(&g_can_event_flags, CAN_EVENT_TX, TX_OR);
+    tx_semaphore_put(&g_can_tx_sem);
     return 0;
 }
 
@@ -253,7 +253,7 @@ static void can_fdcan_rx_callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo)
         memcpy(msg.data, rx_data, msg.len);
         if (kfifo_put(&bus->rx_fifo, &msg)) has_msg = true;
     }
-    if (has_msg) tx_event_flags_set(&g_can_event_flags, CAN_EVENT_RX, TX_OR);
+    if (has_msg) tx_semaphore_put(&g_can_rx_sem);
 }
 
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
@@ -286,7 +286,7 @@ static void can_f4_rx_callback(CAN_HandleTypeDef *hcan, uint32_t RxFifo)
         memcpy(msg.data, rx_data, msg.len);
         if (kfifo_put(&bus->rx_fifo, &msg)) has_msg = true;
     }
-    if (has_msg) tx_event_flags_set(&g_can_event_flags, CAN_EVENT_RX, TX_OR);
+    if (has_msg) tx_semaphore_put(&g_can_rx_sem);
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) { can_f4_rx_callback(hcan, CAN_RX_FIFO0); }

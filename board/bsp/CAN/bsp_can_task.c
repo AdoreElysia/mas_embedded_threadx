@@ -12,7 +12,8 @@
 #define BSP_CAN_TX_TASK_PRIORITY 4
 #define BSP_CAN_TASK_STACK_SIZE  1024U
 
-TX_EVENT_FLAGS_GROUP g_can_event_flags;
+TX_SEMAPHORE g_can_rx_sem;
+TX_SEMAPHORE g_can_tx_sem;
 
 static TX_THREAD                  g_can_rx_thread;
 static TX_THREAD                  g_can_tx_thread;
@@ -26,7 +27,7 @@ static void can_rx_task_entry(ULONG arg)
 
     while (1)
     {
-        tx_event_flags_get(&g_can_event_flags, CAN_EVENT_RX, TX_OR_CLEAR, NULL, TX_WAIT_FOREVER);
+        tx_semaphore_get(&g_can_rx_sem, TX_WAIT_FOREVER);
 
         for (int i = 0; i < BSP_CAN_BUS_NUM; i++)
         {
@@ -49,7 +50,7 @@ static void can_tx_task_entry(ULONG arg)
 
     while (1)
     {
-        tx_event_flags_get(&g_can_event_flags, CAN_EVENT_TX, TX_OR_CLEAR, NULL, TX_WAIT_FOREVER);
+        tx_semaphore_get(&g_can_tx_sem, TX_WAIT_FOREVER);
 
         for (int i = 0; i < BSP_CAN_BUS_NUM; i++)
         {
@@ -83,9 +84,14 @@ static void can_tx_task_entry(ULONG arg)
 
 void BSP_CAN_TaskInit(void)
 {
-    if (tx_event_flags_create(&g_can_event_flags, "can_evt") != TX_SUCCESS)
+    if (tx_semaphore_create(&g_can_rx_sem, "can_rx_sem", 0) != TX_SUCCESS)
     {
-        LOG_E("event flags create failed");
+        LOG_E("rx sem create failed");
+        return;
+    }
+    if (tx_semaphore_create(&g_can_tx_sem, "can_tx_sem", 0) != TX_SUCCESS)
+    {
+        LOG_E("tx sem create failed");
         return;
     }
 

@@ -2,19 +2,17 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2026-05-07 10:45:15
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2026-05-21 12:42:30
+ * @LastEditTime: 2026-05-21 16:00:00
  * @FilePath: /mas_embedded_threadx/board/bsp/CAN/bsp_can_task.h
- * @Description: 
+ * @Description: CAN 收发任务
  */
 #ifndef _BSP_CAN_TASK_H_
 #define _BSP_CAN_TASK_H_
 
 #include "tx_api.h"
 
-#define CAN_EVENT_RX ((ULONG)0x01)
-#define CAN_EVENT_TX ((ULONG)0x02)
-
-extern TX_EVENT_FLAGS_GROUP g_can_event_flags;
+extern TX_SEMAPHORE g_can_rx_sem;
+extern TX_SEMAPHORE g_can_tx_sem;
 
 /**
  * @brief 初始化 CAN 收发后台任务
