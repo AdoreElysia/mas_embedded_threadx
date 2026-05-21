@@ -5,11 +5,21 @@
 
 static void LQR_ErrorHandle(LQRInstance *lqr)
 {
-    if (fabsf(lqr->output) < lqr->max_out * 0.1f) return;
+    /* 仅在输出饱和 (>90% max) 时检测, 避免正常跟随误判 */
+    if (fabsf(lqr->output) < lqr->max_out * 0.90f)
+    {
+        lqr->blocked_count = 0;
+        lqr->errortype     = LQR_ERROR_NONE;
+        return;
+    }
 
     float err_abs = fabsf(lqr->ref - lqr->measure);
 
-    if (err_abs > 0.15f) /* 0.15 阈值 */
+    /* 自适应阈值: |ref| * 0.3, 下限 1.0 (rad 或 rad/s) */
+    float threshold = fabsf(lqr->ref) * 0.3f;
+    if (threshold < 1.0f) threshold = 1.0f;
+
+    if (err_abs > threshold)
     {
         lqr->blocked_count++;
     }
