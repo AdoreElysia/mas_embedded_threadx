@@ -1,6 +1,5 @@
 #include "motor_damiao.h"
 #include "bsp_can.h"
-#include "bsp_can_internal.h"
 #include "bsp_dwt.h"
 #include "bsp_def.h"
 #include "module_offline.h"
@@ -34,7 +33,7 @@ static const DM_Motor_Params_t *dm_get_params(Motor_Type_e type)
 /*  CAN 接收回调 */
 static void dm_can_rx_callback(Can_Device *dev, const uint8_t *data, uint8_t len)
 {
-    (void)len;
+    if (len < 8 || !dev->user_arg) return;
     DM_Motor_t              *motor = (DM_Motor_t *)dev->user_arg;
     const DM_Motor_Params_t *param = motor->params;
 
@@ -83,8 +82,9 @@ static float CalculatePIDOutput(DM_Motor_t *motor)
     /* 位置环 */
     if (motor->base.setting.loop_type & ANGLE_LOOP)
     {
-        pid_measure =
-            (motor->base.setting.angle_feedback_source == 1) ? *motor->base.controller.other_angle_feedback_ptr : motor->base.measure.total_angle;
+        pid_measure = (motor->base.setting.angle_feedback_source == 1 && motor->base.controller.other_angle_feedback_ptr)
+                          ? *motor->base.controller.other_angle_feedback_ptr
+                          : motor->base.measure.total_angle;
         if (motor->base.setting.feedback_reverse_flag == 1) pid_measure *= -1;
         pid_ref = PIDCalculate(&motor->base.controller.angle_PID, pid_measure, pid_ref);
     }
@@ -92,8 +92,9 @@ static float CalculatePIDOutput(DM_Motor_t *motor)
     /* 速度环 */
     if (motor->base.setting.loop_type & SPEED_LOOP)
     {
-        pid_measure =
-            (motor->base.setting.speed_feedback_source == 1) ? *motor->base.controller.other_speed_feedback_ptr : motor->base.measure.speed_rad;
+        pid_measure = (motor->base.setting.speed_feedback_source == 1 && motor->base.controller.other_speed_feedback_ptr)
+                          ? *motor->base.controller.other_speed_feedback_ptr
+                          : motor->base.measure.speed_rad;
         if (motor->base.setting.feedback_reverse_flag == 1) pid_measure *= -1;
         pid_ref = PIDCalculate(&motor->base.controller.speed_PID, pid_measure, pid_ref);
     }
@@ -109,10 +110,14 @@ static float CalculateLQROutput(DM_Motor_t *motor)
     ref = motor->base.controller.ref;
     if (motor->base.setting.motor_reverse_flag == 1) ref *= -1;
 
-    rad_angle = (motor->base.setting.angle_feedback_source == 1) ? *motor->base.controller.other_angle_feedback_ptr : motor->base.measure.total_angle;
+    rad_angle = (motor->base.setting.angle_feedback_source == 1 && motor->base.controller.other_angle_feedback_ptr)
+                    ? *motor->base.controller.other_angle_feedback_ptr
+                    : motor->base.measure.total_angle;
     if (motor->base.setting.feedback_reverse_flag == 1) rad_angle *= -1;
 
-    rad_speed = (motor->base.setting.speed_feedback_source == 1) ? *motor->base.controller.other_speed_feedback_ptr : motor->base.measure.speed_rad;
+    rad_speed = (motor->base.setting.speed_feedback_source == 1 && motor->base.controller.other_speed_feedback_ptr)
+                    ? *motor->base.controller.other_speed_feedback_ptr
+                    : motor->base.measure.speed_rad;
     if (motor->base.setting.feedback_reverse_flag == 1) rad_speed *= -1;
 
     return LQRCalculate(&motor->base.controller.lqr, rad_angle, rad_speed, ref);
@@ -297,7 +302,7 @@ static void dm_ControlAndSend(Motor_Base *base)
     default:
         break;
     }
-    BSP_DWT_Delay(0.0002f); /* 每完成一次发送，就延迟200us */
+    //BSP_DWT_Delay(0.0002f); /* 每完成一次发送，就延迟200us */
 }
 
 /* 对外函数 */
@@ -342,6 +347,19 @@ DM_Motor_t *Motor_DM_Init(Motor_Init_Config_s *config, uint32_t DM_Mode_type)
     motor->base.setting   = config->setting_init_config;
     motor->mode_type      = DM_Mode_type;
     motor->params         = dm_get_params(config->motor_init_info.motor_type);
+
+    /* Master ID (rx_id) 必须大于 CAN ID (tx_id) 且各不相同 */
+    {
+        uint32_t can_id    = config->transport_config.can.tx_id;
+        uint32_t master_id = config->transport_config.can.rx_id;
+        if (master_id <= can_id)
+        {
+            LOG_E("DM motor init failed: Master ID (rx_id=0x%03X) must be greater than CAN ID (tx_id=0x%03X)",
+                  master_id, can_id);
+            BSP_MEM_FREE(motor);
+            return NULL;
+        }
+    }
 
     /* 注册 CAN 设备 */
     Can_Device *can_dev = BSP_CAN_Device_Init(&config->transport_config.can);

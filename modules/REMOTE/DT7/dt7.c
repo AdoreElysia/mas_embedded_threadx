@@ -67,7 +67,7 @@ void remote_dt7_decode(Remote_Data_t *data, Offline_Device *offline)
 
     static uint8_t buf[32];
     uint32_t       rx_len;
-    int            ret = BSP_UART_Read(dt7_uart, buf, &rx_len, TX_WAIT_FOREVER);
+    int            ret = BSP_UART_Read(dt7_uart, buf, sizeof(buf), &rx_len, TX_WAIT_FOREVER);
     if (ret <= 0 || rx_len != 18) return;
 
     /* 摇杆通道解码 (零偏 + 死区)  */

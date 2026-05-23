@@ -59,10 +59,11 @@ int BSP_UART_Send(UART_Device *device, uint8_t *data, uint32_t len, uint32_t tim
  * @brief UART接收
  * @param device   UART设备
  * @param buf      接收数据缓冲区
- * @param rx_len   接收数据长度（字节）
+ * @param buf_size 接收缓冲区容量 (字节), 实际读取不会超过此值
+ * @param rx_len   输出实际接收数据长度 (字节)
  * @param timeout  超时时间
  * @return >0：实际接收字节数，-1：失败/超时
  */
-int BSP_UART_Read(UART_Device *device, uint8_t *buf, uint32_t *rx_len, uint32_t timeout);
+int BSP_UART_Read(UART_Device *device, uint8_t *buf, uint32_t buf_size, uint32_t *rx_len, uint32_t timeout);
 
 #endif // _BSP_UART_H_

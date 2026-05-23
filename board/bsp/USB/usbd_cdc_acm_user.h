@@ -36,6 +36,6 @@ int cdc_acm_send(const uint8_t *data, uint32_t len, uint32_t timeout);
  * @param timeout  超时时间
  * @return      true: 成功接收数据  false: 超时或参数无效
  */
-int cdc_acm_recv(uint8_t *data, uint32_t *rx_len, uint32_t timeout);
+int cdc_acm_recv(uint8_t *data, uint32_t buf_size, uint32_t *rx_len, uint32_t timeout);
 
 #endif

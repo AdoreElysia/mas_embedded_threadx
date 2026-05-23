@@ -1,4 +1,4 @@
-#include "bsp_can_internal.h"
+#include "bsp_can.h"
 #include "bsp_can_task.h"
 #include "bsp_def.h"
 #include <string.h>
@@ -126,7 +126,6 @@ Can_Device *BSP_CAN_Device_Init(Can_Device_Init_Config_s *config)
     {
         memset(bus, 0, sizeof(*bus));
         bus->hcan = config->hcan;
-        list_init(&bus->device_list);
         if (kfifo_init(&bus->rx_fifo, bus->rx_fifo_buf, BSP_CAN_RX_FIFO_SIZE, sizeof(BSP_CanMsg_t)) != 0 ||
             kfifo_init(&bus->tx_fifo, bus->tx_fifo_buf, BSP_CAN_TX_FIFO_SIZE, sizeof(BSP_CanMsg_t)) != 0)
         {
@@ -187,8 +186,6 @@ Can_Device *BSP_CAN_Device_Init(Can_Device_Init_Config_s *config)
     }
 #endif
 
-    dev->node.size = sizeof(Can_Device);
-    list_add(&bus->device_list, &dev->node);
     can_dev_insert(bus, slot, config->rx_id, dev);
 
     LOG_I("dev init: rx=0x%lx tx=0x%lx", dev->rx_id, dev->tx_id);
@@ -205,10 +202,12 @@ int BSP_CAN_Send(Can_Device *device, const uint8_t *data, uint8_t len)
     BSP_CanMsg_t msg = {.hcan = bus->hcan, .id = device->tx_id, .len = len};
     memcpy(msg.data, data, len);
 
+    /* tx_fifo 满时丢弃最老消息，保证最新数据总能入队 */
     if (!kfifo_put(&bus->tx_fifo, &msg))
     {
-        LOG_W("tx_fifo full");
-        return -1;
+        BSP_CanMsg_t dummy;
+        kfifo_get(&bus->tx_fifo, &dummy);
+        kfifo_put(&bus->tx_fifo, &msg);
     }
     tx_semaphore_put(&g_can_tx_sem);
     return 0;
@@ -221,10 +220,12 @@ int BSP_CAN_SendMessage(BSP_CanMsg_t *msg)
     CAN_Bus_Manager *bus = can_bus_find((void *)msg->hcan, true);
     if (bus == NULL) return -1;
 
+    /* tx_fifo 满时丢弃最老消息，保证最新数据总能入队 */
     if (!kfifo_put(&bus->tx_fifo, msg))
     {
-        LOG_W("tx_fifo full");
-        return -1;
+        BSP_CanMsg_t dummy;
+        kfifo_get(&bus->tx_fifo, &dummy);
+        kfifo_put(&bus->tx_fifo, msg);
     }
     tx_semaphore_put(&g_can_tx_sem);
     return 0;

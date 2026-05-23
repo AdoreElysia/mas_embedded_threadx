@@ -29,7 +29,7 @@ static void vision_thread_entry(ULONG arg)
 
     while (1)
     {
-        int ret = cdc_acm_recv(buf, &rx_len, TX_WAIT_FOREVER);
+        int ret = cdc_acm_recv(buf, sizeof(buf), &rx_len, TX_WAIT_FOREVER);
         if (ret <= 0) continue;
 
         for (uint32_t i = 0; i + sizeof(ReceivePacket) <= rx_len; i++)

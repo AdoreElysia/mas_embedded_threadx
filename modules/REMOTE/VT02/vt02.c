@@ -67,7 +67,7 @@ void remote_vt02_decode(Remote_Data_t *data, Offline_Device *offline)
 
     static uint8_t buf[64];
     uint32_t       rx_len;
-    int            ret = BSP_UART_Read(vt02_uart, buf, &rx_len, TX_WAIT_FOREVER);
+    int            ret = BSP_UART_Read(vt02_uart, buf, sizeof(buf), &rx_len, TX_WAIT_FOREVER);
     if (ret <= 0) return;
 
     /* 验证帧头 CRC8 */

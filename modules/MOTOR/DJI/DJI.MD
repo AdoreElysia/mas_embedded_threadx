@@ -102,3 +102,4 @@ void Motor_DJI_SetForwardTorque(DJI_Motor_t *motor, float torque);
 |------|------|------|
 | v1.0 | 2026-05-11 | 初始版本|
 | v1.1 | 2026-05-18 | fix:掉线失能问题，增加前馈力矩补偿 |
+| v1.2 | 2026-05-23 | fix:增加外部指针检查 |

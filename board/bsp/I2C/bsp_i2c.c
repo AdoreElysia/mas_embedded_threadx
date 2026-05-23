@@ -1,6 +1,5 @@
 #include "bsp_i2c.h"
 #include "bsp_def.h"
-#include "list.h"
 #include "i2c.h"
 #include "tx_api.h"
 #include <string.h>
@@ -16,51 +15,26 @@
 /* I2C 设备 */
 typedef struct I2C_Device
 {
-    list_node_t        node;        /* 必须是第一个字段 */
     I2C_HandleTypeDef *hi2c;        /* HAL 句柄 */
     uint16_t           dev_address; /* STM32 中为左移 1 位的地址 */
     I2C_Mode           tx_mode;     /* 发送模式 */
     I2C_Mode           rx_mode;     /* 接收模式 */
+    I2C_Device        *next;        /* 指向下一个设备指针 */
 } I2C_Device;
 
 /* I2C 总线管理器 */
 typedef struct
 {
-    I2C_HandleTypeDef   *hi2c;        /* HAL 句柄 */
-    list_head_t          devices;     /* 设备链表（哨兵） */
-    TX_EVENT_FLAGS_GROUP event_flags; /* I2C 总线事件组 */
-    TX_MUTEX             bus_mutex;   /* 总线互斥锁 */
-    uint8_t              initialized; /* 是否已初始化 */
+    I2C_HandleTypeDef   *hi2c;         /* HAL 句柄 */
+    I2C_Device          *devices_list; /* 设备链表头 */
+    TX_EVENT_FLAGS_GROUP event_flags;  /* I2C 总线事件组 */
+    TX_MUTEX             bus_mutex;    /* 总线互斥锁 */
+    uint8_t              initialized;  /* 是否已初始化 */
 } I2C_Bus;
 
 static I2C_Bus i2c_bus_table[I2C_BUS_NUM];
 
 /* 内部辅助函数 */
-
-/**
- * @brief 查找总线管理器（若未初始化则返回空闲槽位）
- */
-static I2C_Bus *find_or_alloc_bus(I2C_HandleTypeDef *hi2c)
-{
-    if (hi2c == NULL) return NULL;
-
-    for (int i = 0; i < I2C_BUS_NUM; i++)
-    {
-        if (i2c_bus_table[i].hi2c == hi2c)
-        {
-            return &i2c_bus_table[i]; /* 已注册 */
-        }
-    }
-    /* 找空闲槽位 */
-    for (int i = 0; i < I2C_BUS_NUM; i++)
-    {
-        if (i2c_bus_table[i].initialized == 0)
-        {
-            return &i2c_bus_table[i];
-        }
-    }
-    return NULL;
-}
 
 /**
  * @brief 根据 HAL 句柄查找已初始化的总线
@@ -277,7 +251,19 @@ I2C_Device *BSP_I2C_Device_Init(I2C_Device_Init_Config *config)
     }
 
     I2C_HandleTypeDef *hi2c = (I2C_HandleTypeDef *)config->hi2c;
-    I2C_Bus           *bus  = find_or_alloc_bus(hi2c);
+    I2C_Bus           *bus  = find_bus(hi2c);
+    if (bus == NULL)
+    {
+        /* 查找空闲槽位 */
+        for (int i = 0; i < I2C_BUS_NUM; i++)
+        {
+            if (i2c_bus_table[i].initialized == 0)
+            {
+                bus = &i2c_bus_table[i];
+                break;
+            }
+        }
+    }
     if (bus == NULL)
     {
         LOG_E("No free bus slot (max %d)", I2C_BUS_NUM);
@@ -287,8 +273,7 @@ I2C_Device *BSP_I2C_Device_Init(I2C_Device_Init_Config *config)
     /* 首次使用该总线时初始化 */
     if (bus->initialized == 0)
     {
-        list_init(&bus->devices);
-
+        bus->devices_list = NULL; /* 初始化链表头 */
         if (tx_event_flags_create(&bus->event_flags, "i2c_evt") != TX_SUCCESS)
         {
             LOG_E("Event flags create failed");
@@ -316,14 +301,14 @@ I2C_Device *BSP_I2C_Device_Init(I2C_Device_Init_Config *config)
     }
 
     memset(dev, 0, sizeof(I2C_Device));
-    dev->node.size   = sizeof(I2C_Device); /* list 类型检查用 */
     dev->hi2c        = hi2c;
     dev->dev_address = config->dev_address;
     dev->tx_mode     = config->tx_mode;
     dev->rx_mode     = config->rx_mode;
 
     /* 挂载到总线设备链表 */
-    list_add(&bus->devices, &dev->node);
+    dev->next         = bus->devices_list;
+    bus->devices_list = dev;
 
     LOG_I("Device init OK: bus=%d addr=0x%02X", (int)(bus - i2c_bus_table), dev->dev_address);
     return dev;

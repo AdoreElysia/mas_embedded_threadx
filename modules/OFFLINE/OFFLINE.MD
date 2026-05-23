@@ -18,7 +18,7 @@ OFFLINE 模块是一个基于心跳机制的设备离线检测框架。
 │           offline_detect_task_entry (10ms 周期)             │
 │                                                             │
 │  1. 刷新 IWDG (可选)                                        │
-│  2. list_foreach_entry 遍历所有设备                         │
+│  2. for 循环遍历所有设备                                    │
 │     ├── now - last_time > timeout_ms  →  is_offline = true  │
 │     └── now - last_time ≤ timeout_ms  →  is_offline = false │
 │  3. 汇总离线状态, 决定告警等级                              │
@@ -31,10 +31,10 @@ OFFLINE 模块是一个基于心跳机制的设备离线检测框架。
 
 ### 设备链表结构
 
-所有注册设备通过嵌入式链表 (`list_node_t`) 串联，`list_foreach_entry` 遍历时通过回调函数逐个判定。
+所有注册设备通过 `Offline_Device.next` 指针串联，检测任务直接 for 循环遍历。
 
 ```
-g_device_list (哨兵)
+g_device_list (链表头)
     │
     ├── Offline_Device (设备 A)
     │       node.next ──► ...
@@ -49,7 +49,7 @@ g_device_list (哨兵)
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `node` | `list_node_t` | 链表节点（**必须为首字段**，用于 container_of） |
+| `next` | `Offline_Device *` | 指向下一个注册设备的指针，NULL 表尾 |
 | `name` | `char[32]` | 设备名称（最多 31 字符） |
 | `timeout_ms` | `uint32_t` | 心跳超时时间（ms） |
 | `beep_times` | `uint8_t` | 离线时每 2s 大周期内蜂鸣次数（0 = 静默告警） |
@@ -145,44 +145,34 @@ void sensor_task(ULONG unused)
 
 ## 内部实现细节
 
-### 链表遍历与回调聚合
+### 设备遍历与离线判定
 
-检测任务通过 `list_foreach_entry` 遍历所有设备，每个设备调用 `detect_callback`：
+检测任务直接 for 循环遍历所有设备，内联聚合离线状态：
 
 ```c
-static int detect_callback(Offline_Device *dev, void *arg)
+for (Offline_Device *dev = g_device_list; dev; dev = dev->next)
 {
-    detect_ctx_t *ctx = (detect_ctx_t *)arg;
+    if (!dev->enable) continue;
 
-    if (!dev->enable) return 0;
-
-    if (ctx->now - dev->last_time > dev->timeout_ms)
+    uint32_t elapsed = now - dev->last_time;
+    if (elapsed > dev->timeout_ms)
     {
         dev->is_offline = true;
         if (dev->beep_times > 0)
         {
-            ctx->has_severe_fault = true;
-            // 取最小 beep_times
-            if (ctx->request_beep_times == 0 ||
-                dev->beep_times < ctx->request_beep_times)
-            {
-                ctx->request_beep_times = dev->beep_times;
-            }
+            has_severe_fault = true;
+            if (request_beep_times == 0 || dev->beep_times < request_beep_times)
+                request_beep_times = dev->beep_times;
         }
         else
-        {
-            ctx->has_silent_fault = true;
-        }
+            has_silent_fault = true;
     }
     else
-    {
-        dev->is_offline = false; // 恢复在线
-    }
-    return 0; // 继续遍历
+        dev->is_offline = false;
 }
 ```
 
-回调通过 `detect_ctx_t` 上下文聚合所有设备的离线状态，遍历结束后统一处理 LED / 蜂鸣器。
+遍历结束后统一处理 LED / 蜂鸣器。
 
 ### 告警优先级
 
@@ -222,3 +212,5 @@ static int detect_callback(Offline_Device *dev, void *arg)
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2025-09-11 | 初始版本|
+| v1.1 | 2026-05-20 | 增加调试输出，方便调试 |
+| v2.0 | 2026-05-21 | 使用单向链表，方便调试 |

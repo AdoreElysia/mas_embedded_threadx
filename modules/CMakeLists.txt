@@ -5,6 +5,7 @@ set(_module_sources
     algorithm/user_lib.c
     algorithm/crc_rm.c
     algorithm/lqr.c
+    algorithm/chassis_type.c
 )
 
 # 生成的头文件目录 (board binary dir/generated)

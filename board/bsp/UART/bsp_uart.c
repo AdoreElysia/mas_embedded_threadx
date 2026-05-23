@@ -187,9 +187,9 @@ int BSP_UART_Send(UART_Device *device, uint8_t *data, uint32_t len, uint32_t tim
     return (evt_st == TX_SUCCESS) ? (int)len : -1;
 }
 
-int BSP_UART_Read(UART_Device *device, uint8_t *buf, uint32_t *rx_len, uint32_t timeout)
+int BSP_UART_Read(UART_Device *device, uint8_t *buf, uint32_t buf_size, uint32_t *rx_len, uint32_t timeout)
 {
-    if (!device || !device->initialed || !buf)
+    if (!device || !device->initialed || !buf || buf_size == 0)
     {
         if (rx_len) *rx_len = 0;
         return -1;
@@ -198,9 +198,10 @@ int BSP_UART_Read(UART_Device *device, uint8_t *buf, uint32_t *rx_len, uint32_t 
     /* 阻塞模式：直接调用 HAL */
     if (device->rx_mode == UART_MODE_BLOCKING)
     {
-        uint16_t     tmp    = 0;
-        unsigned int tmo    = (timeout == TX_WAIT_FOREVER) ? HAL_MAX_DELAY : timeout;
-        uint16_t     expect = device->expected_rx_len > 0 ? (uint16_t)device->expected_rx_len : (uint16_t)device->buf_size;
+        uint16_t tmp    = 0;
+        uint32_t tmo    = (timeout == TX_WAIT_FOREVER) ? HAL_MAX_DELAY : timeout;
+        uint16_t expect = device->expected_rx_len > 0 ? (uint16_t)device->expected_rx_len : (uint16_t)device->buf_size;
+        if (expect > buf_size) expect = (uint16_t)buf_size;
 
         if (HAL_UARTEx_ReceiveToIdle(device->huart, buf, expect, &tmp, tmo) == HAL_OK)
         {
@@ -221,7 +222,8 @@ int BSP_UART_Read(UART_Device *device, uint8_t *buf, uint32_t *rx_len, uint32_t 
 
     /* 从 kfifo 中读出数据 */
     uint32_t avail  = kfifo_len(&device->rx_fifo);
-    uint32_t actual = kfifo_out(&device->rx_fifo, buf, avail);
+    uint32_t to_read = (avail <= buf_size) ? avail : buf_size;
+    uint32_t actual = kfifo_out(&device->rx_fifo, buf, to_read);
     if (rx_len) *rx_len = actual;
     return (int)actual;
 }
@@ -278,10 +280,19 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 
         if (new_len > 0)
         {
-            dev->rx_fifo.in += new_len;
-            __DMB();
-            dev->last_buf_pos = curr_pos;
-            tx_event_flags_set(&dev->event_flags, BSP_UART_EVENT_RX, TX_OR);
+            /* 保护 kfifo 容量: in 不超过 out + mask + 1 (即 fifo 容量) */
+            unsigned int fifo_cap  = dev->rx_fifo.mask + 1;
+            unsigned int max_in    = dev->rx_fifo.out + fifo_cap;
+            unsigned int space     = (dev->rx_fifo.in < max_in) ? (max_in - dev->rx_fifo.in) : 0;
+            if (new_len > space) new_len = space;
+
+            if (new_len > 0)
+            {
+                dev->rx_fifo.in += new_len;
+                __DMB();
+                dev->last_buf_pos = curr_pos;
+                tx_event_flags_set(&dev->event_flags, BSP_UART_EVENT_RX, TX_OR);
+            }
         }
     }
 }

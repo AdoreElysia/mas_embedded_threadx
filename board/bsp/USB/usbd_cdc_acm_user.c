@@ -140,6 +140,13 @@ void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     (void)ep;
 
+    /* 保护 kfifo 容量: in 不超过 out + mask + 1 */
+    unsigned int fifo_cap  = cdc_rx_fifo.mask + 1;
+    unsigned int max_in    = cdc_rx_fifo.out + fifo_cap;
+    unsigned int space     = (cdc_rx_fifo.in < max_in) ? (max_in - cdc_rx_fifo.in) : 0;
+    if (nbytes > space) nbytes = space;
+    if (nbytes == 0) return;
+
     /* 推进 kfifo 写入索引 */
     __DMB();
     cdc_rx_fifo.in += nbytes;
@@ -235,8 +242,14 @@ int cdc_acm_send(const uint8_t *data, uint32_t len, uint32_t timeout)
     return (int)len;
 }
 
-int cdc_acm_recv(uint8_t *data, uint32_t *rx_len, uint32_t timeout)
+int cdc_acm_recv(uint8_t *data, uint32_t buf_size, uint32_t *rx_len, uint32_t timeout)
 {
+    if (!data || buf_size == 0)
+    {
+        if (rx_len) *rx_len = 0;
+        return -1;
+    }
+
     /* 等待 RX 数据就绪 */
     ULONG actual_flags = 0;
     if (tx_event_flags_get(&usb_event_flags, BSP_USB_EVENT_RX, TX_OR_CLEAR, &actual_flags, timeout) != TX_SUCCESS)
@@ -245,9 +258,10 @@ int cdc_acm_recv(uint8_t *data, uint32_t *rx_len, uint32_t timeout)
         return -1;
     }
 
-    /* 从 kfifo 读出所有可用数据 */
-    uint32_t avail  = kfifo_len(&cdc_rx_fifo);
-    uint32_t actual = kfifo_out(&cdc_rx_fifo, data, avail);
+    /* 从 kfifo 读出数据 (不超过 buf_size) */
+    uint32_t avail   = kfifo_len(&cdc_rx_fifo);
+    uint32_t to_read = (avail <= buf_size) ? avail : buf_size;
+    uint32_t actual  = kfifo_out(&cdc_rx_fifo, data, to_read);
     if (rx_len) *rx_len = actual;
     return (int)actual;
 }

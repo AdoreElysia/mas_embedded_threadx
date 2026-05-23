@@ -67,7 +67,7 @@ void remote_sbus_decode(Remote_Data_t *data, Offline_Device *offline)
 
     static uint8_t buf[32];
     uint32_t       rx_len;
-    int            ret = BSP_UART_Read(sbus_uart, buf, &rx_len, TX_WAIT_FOREVER);
+    int            ret = BSP_UART_Read(sbus_uart, buf, sizeof(buf), &rx_len, TX_WAIT_FOREVER);
     if (ret <= 0) return;
 
     /* 校验帧头 / 帧尾 / 长度 */

@@ -57,7 +57,7 @@ int BSP_UART_Send(UART_Device *device, uint8_t *data, uint32_t len, uint32_t tim
 ```
 
 ```c
-int BSP_UART_Read(UART_Device *device, uint8_t *buf, uint32_t *rx_len, uint32_t timeout);
+int BSP_UART_Read(UART_Device *device, uint8_t *buf, uint32_t buf_size, uint32_t *rx_len, uint32_t timeout);
 ```
 
 
@@ -102,7 +102,7 @@ void uart_recv_task(ULONG unused)
 
     while (1)
     {
-        int ret = BSP_UART_Read(g_uart, buf, &rx_len, TX_WAIT_FOREVER);
+        int ret = BSP_UART_Read(g_uart, buf, sizeof(buf), &rx_len, TX_WAIT_FOREVER);
         if (ret > 0)
         {
             /* 处理 buf[0..rx_len-1] */
@@ -131,7 +131,7 @@ BSP_UART_Send(g_uart, tx_data, tx_len, TX_WAIT_FOREVER);
 /* 接收 */
 uint8_t  buf[128];
 uint32_t len;
-BSP_UART_Read(g_uart, buf, &len, TX_WAIT_FOREVER);
+BSP_UART_Read(g_uart, buf, sizeof(buf), &len, TX_WAIT_FOREVER);
 ```
 
 ### 阻塞模式（简单轮询）
@@ -144,7 +144,7 @@ g_uart = BSP_UART_Device_Init(&cfg);
 
 uint8_t  buf[64];
 uint32_t len;
-BSP_UART_Read(g_uart, buf, &len, 100); /* 100ms 超时 */
+BSP_UART_Read(g_uart, buf, sizeof(buf), &len, 100); /* 100ms 超时 */
 ```
 
 ## 内部实现细节
@@ -169,6 +169,22 @@ dev->rx_fifo.in += Size;     // 零拷贝更新写索引
 ```
 
 任务侧通过 `kfifo_out` 读出数据（消费端拷贝），但 ISR→kfifo 路径完全零拷贝。
+
+### kfifo 溢出保护
+
+ISR 写入 kfifo 前检查组 fifo 容量，避免 `in` 超过 `out + mask + 1` 导致数据被覆盖：
+
+```c
+unsigned int fifo_cap = dev->rx_fifo.mask + 1;
+unsigned int max_in   = dev->rx_fifo.out + fifo_cap;
+unsigned int space    = (dev->rx_fifo.in < max_in) ? (max_in - dev->rx_fifo.in) : 0;
+if (new_len > space) new_len = space;
+if (new_len == 0) return;
+
+dev->rx_fifo.in += new_len;
+```
+
+用户侧同样受 `buf_size` 参数保护，`BSP_UART_Read` 每次读取不会超过用户缓冲区容量。
 
 ### DMA 增量计算
 
@@ -201,3 +217,4 @@ new_len  = curr_pos >= last_pos ? curr_pos - last_pos        // 线性
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-05-05 | 初始版本：阻塞/IT/DMA 三模式，零拷贝 kfifo，事件标志组同步 |
+| v1.1 | 2026-05-23 | `BSP_UART_Read` 新增 `buf_size` 参数防止用户缓冲区溢出；DMA ISR 增加 kfifo 容量保护 |

@@ -1,6 +1,5 @@
 #include "bsp_spi.h"
 #include "bsp_def.h"
-#include "list.h"
 #include "spi.h"
 #include "tx_api.h"
 #include <string.h>
@@ -17,52 +16,27 @@
 /* SPI 设备 */
 typedef struct SPI_Device
 {
-    list_node_t        node; /* 必须是第一个字段 */
     SPI_HandleTypeDef *hspi;
     GPIO_TypeDef      *cs_port;
     uint16_t           cs_pin;
     SPI_Mode           tx_mode;
     SPI_Mode           rx_mode;
+    SPI_Device        *next; /* 指向下一个设备指针 */
 } SPI_Device;
 
 /* ── SPI 总线管理器 ── */
 typedef struct
 {
-    SPI_HandleTypeDef   *hspi;        /* HAL 句柄 */
-    list_head_t          devices;     /* 设备链表（哨兵） */
-    TX_EVENT_FLAGS_GROUP event_flags; /* spi总线事件组 */
-    TX_MUTEX             bus_mutex;   /* 总线互斥锁 */
-    uint8_t              initialized; /* 是否已初始化 */
+    SPI_HandleTypeDef   *hspi;         /* HAL 句柄 */
+    SPI_Device          *devices_list; /* 设备链表 */
+    TX_EVENT_FLAGS_GROUP event_flags;  /* spi总线事件组 */
+    TX_MUTEX             bus_mutex;    /* 总线互斥锁 */
+    uint8_t              initialized;  /* 是否已初始化 */
 } SPI_Bus;
 
 static SPI_Bus spi_bus_table[SPI_BUS_NUM];
 
 /* 内部辅助函数 */
-
-/**
- * @brief 查找总线管理器（若未初始化则返回空闲槽位）
- */
-static SPI_Bus *find_or_alloc_bus(SPI_HandleTypeDef *hspi)
-{
-    if (hspi == NULL) return NULL;
-
-    for (int i = 0; i < SPI_BUS_NUM; i++)
-    {
-        if (spi_bus_table[i].hspi == hspi)
-        {
-            return &spi_bus_table[i]; /* 已注册 */
-        }
-    }
-    /* 找空闲槽位 */
-    for (int i = 0; i < SPI_BUS_NUM; i++)
-    {
-        if (spi_bus_table[i].initialized == 0)
-        {
-            return &spi_bus_table[i];
-        }
-    }
-    return NULL;
-}
 
 /**
  * @brief 根据 HAL 句柄查找已初始化的总线
@@ -254,7 +228,19 @@ SPI_Device *BSP_SPI_Device_Init(SPI_Device_Init_Config *config)
     }
 
     SPI_HandleTypeDef *hspi = (SPI_HandleTypeDef *)config->hspi;
-    SPI_Bus           *bus  = find_or_alloc_bus(hspi);
+    SPI_Bus           *bus  = find_bus(hspi);
+    if (bus == NULL)
+    {
+        /* 查找空闲槽位 */
+        for (int i = 0; i < SPI_BUS_NUM; i++)
+        {
+            if (spi_bus_table[i].initialized == 0)
+            {
+                bus = &spi_bus_table[i];
+                break;
+            }
+        }
+    }
     if (bus == NULL)
     {
         LOG_E("No free bus slot (max %d)", SPI_BUS_NUM);
@@ -264,8 +250,7 @@ SPI_Device *BSP_SPI_Device_Init(SPI_Device_Init_Config *config)
     /* 首次使用该总线时初始化 */
     if (bus->initialized == 0)
     {
-        list_init(&bus->devices);
-
+        bus->devices_list = NULL; /* 初始化链表头 */
         if (tx_event_flags_create(&bus->event_flags, "spi_evt") != TX_SUCCESS)
         {
             LOG_E("Event flags create failed");
@@ -293,18 +278,18 @@ SPI_Device *BSP_SPI_Device_Init(SPI_Device_Init_Config *config)
     }
 
     memset(dev, 0, sizeof(SPI_Device));
-    dev->node.size = sizeof(SPI_Device); /* list 类型检查用 */
-    dev->hspi      = hspi;
-    dev->cs_port   = (GPIO_TypeDef *)config->cs_port;
-    dev->cs_pin    = config->cs_pin;
-    dev->tx_mode   = config->tx_mode;
-    dev->rx_mode   = config->rx_mode;
+    dev->hspi    = hspi;
+    dev->cs_port = (GPIO_TypeDef *)config->cs_port;
+    dev->cs_pin  = config->cs_pin;
+    dev->tx_mode = config->tx_mode;
+    dev->rx_mode = config->rx_mode;
 
     /* 初始化 CS 为高 */
     spi_cs_high(dev);
 
     /* 挂载到总线设备链表 */
-    list_add(&bus->devices, &dev->node);
+    dev->next         = bus->devices_list;
+    bus->devices_list = dev;
 
     LOG_I("Device init OK: bus=%d cs=P%c%d", (int)(bus - spi_bus_table), dev->cs_port ? 'A' + ((uint32_t)dev->cs_port & 0xF) : '?', dev->cs_pin);
     return dev;

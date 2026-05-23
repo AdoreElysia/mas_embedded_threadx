@@ -15,7 +15,7 @@ spi_bus_table[SPI_BUS_NUM]
     │   ├── hspi          ─── HAL 句柄（一条物理 SPI 总线）
     │   ├── bus_mutex     ─── 总线互斥锁（多设备共享）
     │   ├── event_flags   ─── 事件标志组（IT/DMA 完成通知）
-    │   └── devices       ─── 设备链表（哨兵节点）
+    │   └── devices       ─── 设备链表头
     │         ├── SPI_Device (dev0)
     │         │   ├── cs_port / cs_pin  ─── 片选引脚
     │         │   ├── tx_mode / rx_mode ─── 发送/接收模式
@@ -59,7 +59,7 @@ ISR 路径:
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `hspi` | `SPI_HandleTypeDef *` | HAL 库 SPI 句柄 |
-| `devices` | `list_head_t` | 设备链表哨兵（挂载该总线上的所有 `SPI_Device`） |
+| `devices_list` | `SPI_Device *` | 设备链表头（挂载该总线上的所有 `SPI_Device`） |
 | `event_flags` | `TX_EVENT_FLAGS_GROUP` | 事件标志组（bit0: TX, bit1: RX, bit2: TXRX） |
 | `bus_mutex` | `TX_MUTEX` | 总线互斥锁（多设备、多任务共享同一物理总线时互斥） |
 | `initialized` | `uint8_t` | 总线初始化完成标志 |
@@ -68,7 +68,7 @@ ISR 路径:
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `node` | `list_node_t` | 链表节点（必须是第一个字段，挂载到 `SPI_Bus.devices`） |
+| `next` | `SPI_Device *` | 指向同一总线下一个设备的指针，NULL 表尾 |
 | `hspi` | `SPI_HandleTypeDef *` | 指向所属总线的 HAL 句柄 |
 | `cs_port` | `GPIO_TypeDef *` | 片选 GPIO 端口，NULL = 无硬件 CS |
 | `cs_pin` | `uint16_t` | 片选引脚号，0 = 无硬件 CS |
@@ -232,7 +232,7 @@ BSP_SPI_TransReceive(g_spi_dev, tx, rx, 8, TX_WAIT_FOREVER);
 
 ### 设备链表
 
-`SPI_Bus.devices` 使用双向链表管理同一总线上的所有设备。`SPI_Device.node` 必须是结构体的第一个字段，保证 `list_node_t` 指针可以直接转换为 `SPI_Device` 指针。
+`SPI_Bus.devices` 使用单向链表串联同一总线上所有 `SPI_Device`，新设备头插入。`SPI_Device.next` 指向下一个设备，NULL 表尾。
 
 ## 注意事项
 
@@ -247,3 +247,4 @@ BSP_SPI_TransReceive(g_spi_dev, tx, rx, 8, TX_WAIT_FOREVER);
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-05-05 | 初始版本 |
+| v1.1 | 2026-05-21 | 改用单向链表，方便调试,合并重复函数 |

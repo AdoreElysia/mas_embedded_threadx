@@ -1,6 +1,5 @@
 #include "module_boardcomm.h"
 #include "bsp_can.h"
-#include "bsp_can_internal.h"
 #include "module_offline.h"
 #include <string.h>
 

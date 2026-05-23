@@ -7,58 +7,52 @@
 #define LOG_LVL LOG_LVL_INFO
 #include "ulog_def.h"
 
-#define STEER_RATIO      0.8f
-#define ERROR_THRESHOLD  20.0f
-#define PROP_THRESHOLD   15.0f
-#define CLAMP(x, lo, hi) ((x) < (lo) ? (lo) : ((x) > (hi) ? (hi) : (x)))
-#define ABS(x)           ((x) >= 0.0f ? (x) : -(x))
+/* 可调参数 */
+#define STEER_RATIO          0.8f   /* 舵向轮最大功率占比 */
+#define ERROR_THRESHOLD      20.0f  /* 完全按误差分配: sumErr 上限 (rad/s) */
+#define PROP_THRESHOLD       15.0f  /* 完全按比例分配: sumErr 下限 (rad/s) */
+#define IDLE_WHEEL_ERR_RAD   10.47f /* 悬空轮保护: 速度误差阈值 */
+#define CLAMP(x, lo, hi)     ((x) < (lo) ? (lo) : ((x) > (hi) ? (hi) : (x)))
+#define ABS(x)               ((x) >= 0.0f ? (x) : -(x))
 
-/* 注册表 */
 typedef struct
 {
     Motor_Base       *motor;
     PowerCtrl_Role_e  role;
     PowerCtrl_Param_t param;
-    /* 中间结果 */
-    float raw_power;
-    float assigned_power;
-    float output;
+    float             raw_power;      /* 原始估算功率 */
+    float             assigned_power; /* 分配后功率     */
 } PC_Node_t;
 
-static PC_Node_t s_nodes[POWER_CTRL_MAX_MOTORS];
-static uint8_t   s_count;
+static PC_Node_t    s_nodes[POWER_CTRL_MAX_MOTORS];
+static uint8_t      s_count;
 
-static float       s_power_limit   = 45.0f;
-static float       s_buffer_energy = 60.0f;
-static uint8_t     s_use_buffer    = 1;
-static PIDInstance s_buffer_pid;
+static float        s_power_limit   = 45.0f;
+static float        s_buffer_energy = 60.0f;
+static uint8_t      s_use_buffer    = 1;
+static PIDInstance  s_buffer_pid;
 
-/* 辅助: output → 扭矩 → 电流 → output */
-static float motor_output_to_torque(Motor_Base *m)
+/* DJI 电机辅助: output(整型电流值) ↔ torque(Nm) */
+static float dji_output_to_torque(const Motor_Base *m)
 {
-    /* output 是电流整数值, 反解为扭矩 */
     float Kt_gear = m->info.torque_constant * m->info.gear_ratio;
-    if (Kt_gear < 1e-6f) return 0;
+    if (Kt_gear < 1e-6f) return 0.0f;
 
     switch (m->info.motor_type)
     {
     case M3508:
-        return IntegerToCurrent(-20.0f, 20.0f, -16384, 16384, (int16_t)m->controller.output) * Kt_gear;
+        return IntegerToCurrent(-20.0f, 20.0f, -16384, 16384, (int16_t)m->controller.output);
     case M2006:
-        return IntegerToCurrent(-10.0f, 10.0f, -10000, 10000, (int16_t)m->controller.output) * Kt_gear;
+        return IntegerToCurrent(-10.0f, 10.0f, -10000, 10000, (int16_t)m->controller.output);
     case GM6020_CURRENT:
-        return IntegerToCurrent(-3.0f, 3.0f, -16384, 16384, (int16_t)m->controller.output) * Kt_gear;
-    /* 非 DJI 电机: output 直接就是扭矩 */
-    case DM4310:
-    case DM6220:
-    case ZDT_STEEP_MOTOR:
-        return m->controller.output;
+        return IntegerToCurrent(-3.0f,  3.0f,  -16384, 16384, (int16_t)m->controller.output);
     default:
-        return 0;
+        return 0.0f; /* 非 DJI 电机不参与功率控制 */
     }
 }
 
-static void motor_set_torque(Motor_Base *m, float torque_nm)
+/* DJI 电机: 扭矩 (Nm) → 写入 controller.output */
+static void dji_set_torque(Motor_Base *m, float torque_nm)
 {
     float Kt_gear = m->info.torque_constant * m->info.gear_ratio;
     if (Kt_gear < 1e-6f)
@@ -67,51 +61,64 @@ static void motor_set_torque(Motor_Base *m, float torque_nm)
         return;
     }
 
+    float current_A = torque_nm / Kt_gear;
+
     switch (m->info.motor_type)
     {
     case M3508:
-        m->controller.output = currentToInteger(-20.0f, 20.0f, -16384, 16384, torque_nm / Kt_gear);
+        m->controller.output = currentToInteger(-20.0f, 20.0f, -16384, 16384, current_A);
         break;
     case M2006:
-        m->controller.output = currentToInteger(-10.0f, 10.0f, -10000, 10000, torque_nm / Kt_gear);
+        m->controller.output = currentToInteger(-10.0f, 10.0f, -10000, 10000, current_A);
         break;
     case GM6020_CURRENT:
-        m->controller.output = currentToInteger(-3.0f, 3.0f, -16384, 16384, torque_nm / Kt_gear);
+        m->controller.output = currentToInteger(-3.0f,  3.0f,  -16384, 16384, current_A);
         break;
     default:
-        /* DM / UART : output 直接是扭矩 */
-        m->controller.output = torque_nm;
-        break;
+        break; /* 非 DJI 电机不操作 */
     }
 }
 
-/* 分组限幅 */
+/**
+ * @brief 对一组电机执行混合权重功率分配
+ * @param nodes       电机节点数组
+ * @param N           节点数量
+ * @param max_power   该组可用功率上限 (W)
+ * @param cmd_sum_out [out] 命令功率之和, 可为 NULL
+ */
 static void limit_group(PC_Node_t **nodes, uint8_t N, float max_power, float *cmd_sum_out)
 {
     if (N == 0)
     {
-        if (cmd_sum_out) *cmd_sum_out = 0;
+        if (cmd_sum_out) *cmd_sum_out = 0.0f;
         return;
     }
 
-    float omega[POWER_CTRL_MAX_MOTORS], tau[POWER_CTRL_MAX_MOTORS];
-    float cmdPow[POWER_CTRL_MAX_MOTORS], errRad[POWER_CTRL_MAX_MOTORS];
-    float sum_cmd = 0, allocatable = 0, sum_pos = 0, sum_err = 0;
+    float omega[POWER_CTRL_MAX_MOTORS];  /* 输出轴角速度 (rad/s) */
+    float tau[POWER_CTRL_MAX_MOTORS];    /* 输出轴扭矩   (Nm) */
+    float cmdPow[POWER_CTRL_MAX_MOTORS]; /* 估算功率     (W) */
+    float errRad[POWER_CTRL_MAX_MOTORS]; /* |ref - speed| (rad/s) */
+
+    float sum_cmd = 0.0f, allocatable = 0.0f, sum_pos = 0.0f, sum_err = 0.0f;
 
     for (uint8_t i = 0; i < N; i++)
     {
         Motor_Base *m  = nodes[i]->motor;
-        float       k1 = nodes[i]->param.k1, k2 = nodes[i]->param.k2, k3 = nodes[i]->param.k3;
+        float       k1 = nodes[i]->param.k1;
+        float       k2 = nodes[i]->param.k2;
+        float       k3 = nodes[i]->param.k3;
 
         omega[i]  = m->measure.speed_rad / m->info.gear_ratio;
-        tau[i]    = motor_output_to_torque(m);
+        tau[i]    = dji_output_to_torque(m);
+
+        /* P = τ·Ω + k1·|Ω| + k2·τ² + k3 */
         cmdPow[i] = tau[i] * omega[i] + k1 * ABS(omega[i]) + k2 * tau[i] * tau[i] + k3;
 
         nodes[i]->raw_power = cmdPow[i];
         sum_cmd += cmdPow[i];
         errRad[i] = ABS(m->controller.ref - m->measure.speed_rad);
 
-        if (cmdPow[i] <= 0)
+        if (cmdPow[i] <= 0.0f)
             allocatable += (-cmdPow[i]);
         else
         {
@@ -121,17 +128,14 @@ static void limit_group(PC_Node_t **nodes, uint8_t N, float max_power, float *cm
     }
 
     if (cmd_sum_out) *cmd_sum_out = sum_cmd;
-    if (sum_cmd <= max_power)
-    {
-        for (uint8_t i = 0; i < N; i++)
-        {
-            nodes[i]->assigned_power = cmdPow[i];
-            nodes[i]->output         = nodes[i]->motor->controller.output;
-        }
-        return;
-    }
 
+    /* 不超限: 保持原始输出 */
+    if (sum_cmd <= max_power) return;
+
+    /* 超限: 分配功率预算 */
     allocatable += max_power;
+
+    /* 误差置信度: 0=按功率比例, 1=按误差比例, 中间线性插值 */
     float confidence;
     if (sum_err >= ERROR_THRESHOLD)
         confidence = 1.0f;
@@ -142,55 +146,63 @@ static void limit_group(PC_Node_t **nodes, uint8_t N, float max_power, float *cm
 
     for (uint8_t i = 0; i < N; i++)
     {
+        if (cmdPow[i] <= 0.0f) continue; /* 再生功率不限制 */
+
         Motor_Base *m = nodes[i]->motor;
-        if (cmdPow[i] <= 0)
-        {
-            nodes[i]->assigned_power = cmdPow[i];
-            continue;
-        }
 
-        float w_err   = (sum_err > 1e-5f) ? (errRad[i] / sum_err) : (1.0f / N);
-        float w_prop  = (sum_pos > 1e-5f) ? (cmdPow[i] / sum_pos) : (1.0f / N);
-        float w       = confidence * w_err + (1.0f - confidence) * w_prop;
+        /* 混合权重 */
+        float w_err  = (sum_err  > 1e-5f) ? (errRad[i] / sum_err)  : (1.0f / N);
+        float w_prop = (sum_pos  > 1e-5f) ? (cmdPow[i] / sum_pos)  : (1.0f / N);
+        float w      = confidence * w_err + (1.0f - confidence) * w_prop;
+
         float p_alloc = w * allocatable;
-
-        if (errRad[i] < 10.47f && cmdPow[i] < p_alloc) p_alloc = cmdPow[i];
         nodes[i]->assigned_power = p_alloc;
 
-        float Omega = omega[i];
-        float a = nodes[i]->param.k2, b = Omega;
-        float c = nodes[i]->param.k1 * ABS(Omega) + nodes[i]->param.k3 - p_alloc;
-        float tau_new;
+        /* 悬空轮保护: 速度已接近目标的电机不抢占接地轮功率 */
+        if (errRad[i] < IDLE_WHEEL_ERR_RAD && p_alloc > cmdPow[i])
+            p_alloc = cmdPow[i];
 
-        if (a < 1e-8f)
-            tau_new = (ABS(Omega) > 1e-5f) ? (p_alloc - nodes[i]->param.k1 * ABS(Omega) - nodes[i]->param.k3) / Omega : 0;
+        /* 反解扭矩: k2·τ² + Ω·τ + (k1|Ω| + k3 - p_alloc) = 0 */
+        float Omega  = omega[i];
+        float a_coef = nodes[i]->param.k2;
+        float b_coef = Omega;
+        float c_coef = nodes[i]->param.k1 * ABS(Omega) + nodes[i]->param.k3 - p_alloc;
+
+        float tau_new;
+        if (a_coef < 1e-8f)
+        {
+            tau_new = (ABS(Omega) > 1e-5f)
+                          ? (p_alloc - nodes[i]->param.k1 * ABS(Omega) - nodes[i]->param.k3) / Omega
+                          : 0.0f;
+        }
         else
         {
-            float delta = b * b - 4 * a * c;
-            if (delta < 0)
+            float delta = b_coef * b_coef - 4.0f * a_coef * c_coef;
+            if (delta < 0.0f)
             {
-                tau_new = -b / (2 * a);
+                tau_new = -b_coef / (2.0f * a_coef);
             }
             else
             {
-                float sd = sqrtf(delta);
-                float r1 = (-b + sd) / (2 * a), r2 = (-b - sd) / (2 * a);
-                tau_new = (m->controller.output >= 0) ? r1 : r2;
+                float sqrt_delta = sqrtf(delta);
+                float root1      = (-b_coef + sqrt_delta) / (2.0f * a_coef);
+                float root2      = (-b_coef - sqrt_delta) / (2.0f * a_coef);
+                tau_new = (m->controller.output >= 0.0f) ? root1 : root2;
             }
         }
+
         tau_new = CLAMP(tau_new, -m->info.max_torque, m->info.max_torque);
-        motor_set_torque(m, tau_new);
-        nodes[i]->output = m->controller.output;
+        dji_set_torque(m, tau_new);
     }
 }
 
-/* 对外函数 */
+/* 对外接口 */
 
 void PowerControl_Register(Motor_Base *motor, PowerCtrl_Role_e role, PowerCtrl_Param_t param)
 {
     if (!motor || s_count >= POWER_CTRL_MAX_MOTORS) return;
 
-    /* 已注册则更新 */
+    /* 已注册则更新参数 */
     for (uint8_t i = 0; i < s_count; i++)
     {
         if (s_nodes[i].motor == motor)
@@ -218,9 +230,11 @@ void PowerControl_Update(void)
 {
     if (s_count == 0) return;
 
-    /* 收集 drive/steer */
-    PC_Node_t *drives[POWER_CTRL_MAX_MOTORS], *steers[POWER_CTRL_MAX_MOTORS];
+    /* 按角色分组 */
+    PC_Node_t *drives[POWER_CTRL_MAX_MOTORS];
+    PC_Node_t *steers[POWER_CTRL_MAX_MOTORS];
     uint8_t    n_drive = 0, n_steer = 0;
+
     for (uint8_t i = 0; i < s_count; i++)
     {
         if (s_nodes[i].role == PC_ROLE_DRIVE)
@@ -229,11 +243,11 @@ void PowerControl_Update(void)
             steers[n_steer++] = &s_nodes[i];
     }
 
-    /* 可用功率 */
+    /* 计算可用功率 */
     float effective = s_power_limit;
     if (s_use_buffer)
     {
-        if (s_buffer_pid.Kp == 0) /* lazy init */
+        if (s_buffer_pid.Kp == 0.0f) /* lazy init */
         {
             PID_Init_Config_s cfg = {.MaxOut = 50, .DeadBand = 5, .Kp = 5, .Improve = 0x01};
             PIDInit(&s_buffer_pid, &cfg);
@@ -242,17 +256,20 @@ void PowerControl_Update(void)
         effective -= s_buffer_pid.Output;
     }
 
+    /* 分配 */
     if (n_steer == 0)
     {
         limit_group(drives, n_drive, effective, NULL);
     }
     else
     {
-        float steer_sum = 0;
+        float steer_sum = 0.0f;
         limit_group(steers, n_steer, effective * STEER_RATIO, &steer_sum);
+
         float steer_actual = (steer_sum < effective * STEER_RATIO) ? steer_sum : effective * STEER_RATIO;
         float drive_limit  = effective - steer_actual;
-        if (drive_limit < 0) drive_limit = 0;
+        if (drive_limit < 0.0f) drive_limit = 0.0f;
+
         limit_group(drives, n_drive, drive_limit, NULL);
     }
 }

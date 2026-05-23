@@ -1,6 +1,5 @@
 #include "motor_dji.h"
 #include "bsp_can.h"
-#include "bsp_can_internal.h"
 #include "bsp_def.h"
 #include "module_offline.h"
 #include "user_lib.h"
@@ -53,7 +52,7 @@ static uint8_t sender_enable_flag[MOTOR_SENDER_SIZE] = {0};
 /* CAN 接收回调 */
 static void dji_can_rx_callback(Can_Device *dev, const uint8_t *data, uint8_t len)
 {
-    (void)len;
+    if (len < 8 || !dev->user_arg) return;
     DJI_Motor_t *motor = (DJI_Motor_t *)dev->user_arg;
 
     motor->measure.last_ecd                = motor->measure.ecd;
@@ -90,8 +89,9 @@ static float CalculatePIDOutput(DJI_Motor_t *motor)
     /* 位置环 */
     if (motor->base.setting.loop_type & ANGLE_LOOP)
     {
-        pid_measure =
-            (motor->base.setting.angle_feedback_source == 1) ? *motor->base.controller.other_angle_feedback_ptr : motor->base.measure.total_angle;
+        pid_measure = (motor->base.setting.angle_feedback_source == 1 && motor->base.controller.other_angle_feedback_ptr)
+                          ? *motor->base.controller.other_angle_feedback_ptr
+                          : motor->base.measure.total_angle;
 
         if (motor->base.setting.feedback_reverse_flag == 1) pid_measure *= -1;
         pid_ref = PIDCalculate(&motor->base.controller.angle_PID, pid_measure, pid_ref);
@@ -100,8 +100,9 @@ static float CalculatePIDOutput(DJI_Motor_t *motor)
     /* 速度环 */
     if (motor->base.setting.loop_type & SPEED_LOOP)
     {
-        pid_measure =
-            (motor->base.setting.speed_feedback_source == 1) ? *motor->base.controller.other_speed_feedback_ptr : motor->base.measure.speed_rad;
+        pid_measure = (motor->base.setting.speed_feedback_source == 1 && motor->base.controller.other_speed_feedback_ptr)
+                          ? *motor->base.controller.other_speed_feedback_ptr
+                          : motor->base.measure.speed_rad;
 
         if (motor->base.setting.feedback_reverse_flag == 1) pid_measure *= -1;
         pid_ref = PIDCalculate(&motor->base.controller.speed_PID, pid_measure, pid_ref);
@@ -118,10 +119,14 @@ static float CalculateLQROutput(DJI_Motor_t *motor)
     ref = motor->base.controller.ref;
     if (motor->base.setting.motor_reverse_flag == 1) ref *= -1;
 
-    rad_angle = (motor->base.setting.angle_feedback_source == 1) ? *motor->base.controller.other_angle_feedback_ptr : motor->base.measure.total_angle;
+    rad_angle = (motor->base.setting.angle_feedback_source == 1 && motor->base.controller.other_angle_feedback_ptr)
+                    ? *motor->base.controller.other_angle_feedback_ptr
+                    : motor->base.measure.total_angle;
     if (motor->base.setting.feedback_reverse_flag == 1) rad_angle *= -1;
 
-    rad_speed = (motor->base.setting.speed_feedback_source == 1) ? *motor->base.controller.other_speed_feedback_ptr : motor->base.measure.speed_rad;
+    rad_speed = (motor->base.setting.speed_feedback_source == 1 && motor->base.controller.other_speed_feedback_ptr)
+                    ? *motor->base.controller.other_speed_feedback_ptr
+                    : motor->base.measure.speed_rad;
     if (motor->base.setting.feedback_reverse_flag == 1) rad_speed *= -1;
 
     return LQRCalculate(&motor->base.controller.lqr, rad_angle, rad_speed, ref);

@@ -15,7 +15,7 @@ i2c_bus_table[I2C_BUS_NUM]
     │   ├── hi2c          ─── HAL 句柄（一条物理 I2C 总线）
     │   ├── bus_mutex     ─── 总线互斥锁（多设备共享）
     │   ├── event_flags   ─── 事件标志组（IT/DMA 完成通知）
-    │   └── devices       ─── 设备链表（哨兵节点）
+    │   └── devices_list  ─── 设备链表头
     │         ├── I2C_Device (dev0)
     │         │   ├── dev_address       ─── 从设备地址（左移1位）
     │         │   ├── tx_mode / rx_mode ─── 发送/接收模式
@@ -61,7 +61,7 @@ ISR 路径:
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `hi2c` | `I2C_HandleTypeDef *` | HAL 库 I2C 句柄 |
-| `devices` | `list_head_t` | 设备链表哨兵（挂载该总线上的所有 `I2C_Device`） |
+| `devices_list` | `I2C_Device *` | 设备链表头（挂载该总线上的所有 `I2C_Device`） |
 | `event_flags` | `TX_EVENT_FLAGS_GROUP` | 事件标志组（bit0: TX, bit1: RX） |
 | `bus_mutex` | `TX_MUTEX` | 总线互斥锁（多设备、多任务共享同一物理总线时互斥） |
 | `initialized` | `uint8_t` | 总线初始化完成标志 |
@@ -70,7 +70,7 @@ ISR 路径:
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `node` | `list_node_t` | 链表节点（必须是第一个字段，挂载到 `I2C_Bus.devices`） |
+| `next` | `I2C_Device *` | 指向同一总线下一个设备的指针，NULL 表尾 |
 | `hi2c` | `I2C_HandleTypeDef *` | 指向所属总线的 HAL 句柄 |
 | `dev_address` | `uint16_t` | 从设备地址（STM32 中需左移 1 位，如 7-bit 地址 `0x0E` → 写入 `0x1C`） |
 | `tx_mode` | `I2C_Mode` | 发送模式 |
@@ -200,7 +200,7 @@ void i2c_dma_task(ULONG unused)
 
 ### 设备链表
 
-`I2C_Bus.devices` 使用双向链表管理同一总线上的所有设备。`I2C_Device.node` 必须是结构体的第一个字段，保证 `list_node_t` 指针可以直接转换为 `I2C_Device` 指针。
+`I2C_Bus.devices` 使用单向链表串联同一总线上所有 `I2C_Device`，新设备头插入。`I2C_Device.next` 指向下一个设备，NULL 表尾。
 
 ## 注意事项
 
@@ -213,3 +213,4 @@ void i2c_dma_task(ULONG unused)
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-05-05 | 初始版本 |
+| v1.1 | 2026-05-21 | 改用单向链表，方便调试,合并重复函数 |
