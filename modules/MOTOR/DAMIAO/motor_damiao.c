@@ -11,8 +11,6 @@
 #define LOG_LVL LOG_LVL_DBG
 #include "ulog_def.h"
 
-#define DM_TWO_PI 6.283185307f
-
 /* 达妙电机参数配置表 */
 static const DM_Motor_Params_t dm_motor_params[] = {
     {-12.5f, 12.5f, -30.0f, 30.0f, 0.0f, 500.0f, 0.0f, 5.0f, -10.0f, 10.0f}, /* DM4310 */
@@ -53,14 +51,16 @@ static void dm_can_rx_callback(Can_Device *dev, const uint8_t *data, uint8_t len
 
     float current_angle = motor->base.measure.single_round_angle;
     float diff          = current_angle - motor->measure.last_single_round_angle;
-    if (diff < -3.14159f)
+    float range         = param->p_max - param->p_min;
+    float half_range    = range * 0.5f;
+    if (diff < -half_range)
     {
-        diff += DM_TWO_PI;
+        diff += range;
         motor->measure.total_round++;
     }
-    else if (diff > 3.14159f)
+    else if (diff > half_range)
     {
-        diff -= DM_TWO_PI;
+        diff -= range;
         motor->measure.total_round--;
     }
 
