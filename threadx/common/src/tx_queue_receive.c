@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -70,6 +69,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_queue_receive(TX_QUEUE *queue_ptr, VOID *destination_ptr, ULONG wait_option)
 {
@@ -85,6 +92,8 @@ TX_THREAD       *next_thread;
 TX_THREAD       *previous_thread;
 UINT            status;
 
+
+    TRACE_RECORD_U32x3(TRACE_API_TX_QUEUE_RECEIVE, TX_POINTER_TO_ULONG_CONVERT(queue_ptr), TX_POINTER_TO_ULONG_CONVERT(destination_ptr), wait_option);
 
     /* Default the status to TX_SUCCESS.  */
     status =  TX_SUCCESS;
@@ -473,6 +482,8 @@ UINT            status;
         /* Immediate return, return error completion.  */
         status =  TX_QUEUE_EMPTY;
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_QUEUE_RECEIVE, status);
 
     /* Return completion status.  */
     return(status);

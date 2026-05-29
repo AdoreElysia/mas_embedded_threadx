@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -64,6 +63,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_byte_pool_create(TX_BYTE_POOL *pool_ptr, CHAR *name_ptr, VOID *pool_start, ULONG pool_size)
 {
@@ -77,6 +84,8 @@ TX_BYTE_POOL        *next_pool;
 TX_BYTE_POOL        *previous_pool;
 ALIGN_TYPE          *free_ptr;
 
+
+    TRACE_RECORD_U32x3(TRACE_API_TX_BYTE_POOL_CREATE, TX_POINTER_TO_ULONG_CONVERT(pool_ptr), TX_POINTER_TO_ULONG_CONVERT(pool_ptr), pool_size);
 
     /* Initialize the byte pool control block to all zeros.  */
     TX_MEMSET(pool_ptr, 0, (sizeof(TX_BYTE_POOL)));
@@ -179,11 +188,15 @@ ALIGN_TYPE          *free_ptr;
     /* If trace is enabled, insert this event into the trace buffer.  */
     TX_TRACE_IN_LINE_INSERT(TX_TRACE_BYTE_POOL_CREATE, pool_ptr, TX_POINTER_TO_ULONG_CONVERT(pool_start), pool_size, TX_POINTER_TO_ULONG_CONVERT(&block_ptr), TX_TRACE_BYTE_POOL_EVENTS)
 
+    TRACE_NAME_RESOURCE(TX_POINTER_TO_ULONG_CONVERT(pool_ptr), pool_ptr->tx_byte_pool_name)
+
     /* Log this kernel call.  */
     TX_EL_BYTE_POOL_CREATE_INSERT
 
     /* Restore interrupts.  */
     TX_RESTORE
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_BYTE_POOL_CREATE, TX_SUCCESS);
 
     /* Return TX_SUCCESS.  */
     return(TX_SUCCESS);

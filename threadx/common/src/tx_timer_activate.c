@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -62,6 +61,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_timer_activate(TX_TIMER *timer_ptr)
 {
@@ -70,6 +77,8 @@ TX_INTERRUPT_SAVE_AREA
 
 UINT        status;
 
+
+	TRACE_RECORD_U32(TRACE_API_TX_TIMER_ACTIVATE, TX_POINTER_TO_ULONG_CONVERT(timer_ptr));
 
     /* Disable interrupts to put the timer on the created list.  */
     TX_DISABLE
@@ -122,6 +131,8 @@ UINT        status;
 
     /* Restore interrupts.  */
     TX_RESTORE
+
+	TRACE_RECORD_END_CALL_U32(TRACE_API_TX_TIMER_ACTIVATE, status);
 
     /* Return completion status.  */
     return(status);

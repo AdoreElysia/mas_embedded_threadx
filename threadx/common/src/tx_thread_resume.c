@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -63,6 +62,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_thread_resume(TX_THREAD *thread_ptr)
 {
@@ -91,6 +98,8 @@ ULONG                       time_stamp =  ((ULONG) 0);
 UINT            map_index;
 #endif
 
+
+    TRACE_RECORD_U32(TRACE_API_TX_THREAD_RESUME, TX_POINTER_TO_ULONG_CONVERT(thread_ptr));
 
 #ifdef TX_ENABLE_STACK_CHECKING
 
@@ -185,6 +194,7 @@ UINT            map_index;
         /* Setup successful return status.  */
         status =  TX_SUCCESS;
 #else
+        TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_RESUME, TX_SUCCESS);
 
         /* Return successful completion.  */
         return(TX_SUCCESS);
@@ -434,6 +444,8 @@ UINT            map_index;
                             _tx_thread_system_return();
                         }
 
+                        TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_RESUME, TX_SUCCESS);
+
                         /* Return in-line when MISRA is not enabled.  */
                         return(TX_SUCCESS);
 #endif
@@ -568,6 +580,8 @@ UINT            map_index;
         }
     }
 #endif
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_RESUME, status);
 
     /* Return completion status. */
     return(status);

@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -70,6 +69,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_byte_allocate(TX_BYTE_POOL *pool_ptr, VOID **memory_ptr, ULONG memory_size,  ULONG wait_option)
 {
@@ -93,6 +100,7 @@ ULONG                       upper_tbu;
 ULONG                       lower_tbu;
 #endif
 
+    TRACE_RECORD_U32x2(TRACE_API_TX_BYTE_ALLOCATE, TX_POINTER_TO_ULONG_CONVERT(pool_ptr), wait_option);
 
     /* Round the memory size up to the next size that is evenly divisible by
        an ALIGN_TYPE (this is typically a 32-bit ULONG).  This guarantees proper alignment.  */
@@ -396,6 +404,8 @@ ULONG                       lower_tbu;
             status =  TX_NO_MEMORY;
         }
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_BYTE_ALLOCATE, status);
 
     /* Return completion status.  */
     return(status);

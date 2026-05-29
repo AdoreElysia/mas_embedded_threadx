@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -63,6 +62,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _txe_queue_delete(TX_QUEUE *queue_ptr)
 {
@@ -72,6 +79,8 @@ UINT            status;
 TX_THREAD       *thread_ptr;
 #endif
 
+
+    TRACE_RECORD_U32(TRACE_API_TXE_QUEUE_DELETE, TX_POINTER_TO_ULONG_CONVERT(queue_ptr));
 
     /* Default status to success.  */
     status =  TX_SUCCESS;
@@ -129,6 +138,8 @@ TX_THREAD       *thread_ptr;
         /* Call actual queue delete function.  */
         status =  _tx_queue_delete(queue_ptr);
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TXE_QUEUE_DELETE, status);
 
     /* Return completion status.  */
     return(status);

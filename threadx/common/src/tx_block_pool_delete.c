@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -65,6 +64,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_block_pool_delete(TX_BLOCK_POOL *pool_ptr)
 {
@@ -77,6 +84,8 @@ UINT            suspended_count;
 TX_BLOCK_POOL   *next_pool;
 TX_BLOCK_POOL   *previous_pool;
 
+
+    TRACE_RECORD_U32(TRACE_API_TX_BLOCK_POOL_DELETE, TX_POINTER_TO_ULONG_CONVERT(pool_ptr));
 
     /* Disable interrupts to remove the block pool from the created list.  */
     TX_DISABLE
@@ -194,6 +203,8 @@ TX_BLOCK_POOL   *previous_pool;
 
     /* Check for preemption.  */
     _tx_thread_system_preempt_check();
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_BLOCK_POOL_DELETE, TX_SUCCESS);
 
     /* Return TX_SUCCESS.  */
     return(TX_SUCCESS);

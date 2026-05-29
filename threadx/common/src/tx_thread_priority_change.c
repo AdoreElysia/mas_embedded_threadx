@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -72,6 +71,19 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     William E. Lamie         Modified comment(s), and      */
+/*                                            change thread state from    */
+/*                                            TX_SUSPENDED to             */
+/*                                            TX_PRIORITY_CHANGE before   */
+/*                                            calling                     */
+/*                                            _tx_thread_system_suspend,  */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_thread_priority_change(TX_THREAD *thread_ptr, UINT new_priority, UINT *old_priority)
 {
@@ -81,6 +93,8 @@ TX_INTERRUPT_SAVE_AREA
 TX_THREAD       *execute_ptr;
 TX_THREAD       *next_execute_ptr;
 UINT            original_priority;
+
+	TRACE_RECORD_U32x2(TRACE_API_TX_THREAD_PRIORITY_CHANGE, TX_POINTER_TO_ULONG_CONVERT(thread_ptr), new_priority);
 
 
     /* Lockout interrupts while the thread is being suspended.  */
@@ -267,6 +281,8 @@ UINT            original_priority;
         /* Check for preemption.  */
         _tx_thread_system_preempt_check();
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_PRIORITY_CHANGE, TX_SUCCESS);
 
     /* Return success if we get here!  */
     return(TX_SUCCESS);

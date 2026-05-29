@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -62,12 +61,22 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _txe_mutex_put(TX_MUTEX *mutex_ptr)
 {
 
 UINT            status;
 
+
+    TRACE_RECORD_U32(TRACE_API_TXE_MUTEX_PUT, TX_POINTER_TO_ULONG_CONVERT(mutex_ptr));
 
     /* Default status to success.  */
     status =  TX_SUCCESS;
@@ -111,6 +120,8 @@ UINT            status;
         /* Call actual put mutex function.  */
         status =  _tx_mutex_put(mutex_ptr);
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TXE_MUTEX_PUT, status);
 
     /* Return completion status.  */
     return(status);

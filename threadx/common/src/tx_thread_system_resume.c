@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -69,6 +68,14 @@
 /*    _tx_thread_wait_abort                 Thread wait abort             */
 /*    Other ThreadX Components                                            */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 VOID  _tx_thread_system_resume(TX_THREAD *thread_ptr)
 #ifndef TX_NOT_INTERRUPTABLE
@@ -128,6 +135,8 @@ UINT            map_index;
 
     /* Log the thread status change.  */
     TX_TRACE_IN_LINE_INSERT(TX_TRACE_THREAD_RESUME, thread_ptr, thread_ptr -> tx_thread_state, TX_POINTER_TO_ULONG_CONVERT(&execute_ptr), TX_POINTER_TO_ULONG_CONVERT(_tx_thread_execute_ptr), TX_TRACE_INTERNAL_EVENTS)
+    TRACE_ON_TASK_START_READY(TX_POINTER_TO_ULONG_CONVERT(thread_ptr->tx_thread_ready_next))
+
 
 #ifdef TX_ENABLE_EVENT_TRACE
 
@@ -570,6 +579,7 @@ UINT            state;
 
         /* Log the thread status change.  */
         TX_TRACE_IN_LINE_INSERT(TX_TRACE_THREAD_RESUME, thread_ptr, ((ULONG) state), TX_POINTER_TO_ULONG_CONVERT(&temp_state), TX_POINTER_TO_ULONG_CONVERT(_tx_thread_execute_ptr), TX_TRACE_INTERNAL_EVENTS)
+        TRACE_ON_TASK_START_READY(thread_ptr->tx_thread_ready_next)
 
         /* Make sure the type of suspension under way is not a terminate or
            thread completion.  In either of these cases, do not void the
@@ -641,6 +651,7 @@ UINT            map_index;
 
     /* Log the thread status change.  */
     TX_TRACE_IN_LINE_INSERT(TX_TRACE_THREAD_RESUME, thread_ptr, ((ULONG) thread_ptr -> tx_thread_state), TX_POINTER_TO_ULONG_CONVERT(&execute_ptr), TX_POINTER_TO_ULONG_CONVERT(_tx_thread_execute_ptr), TX_TRACE_INTERNAL_EVENTS)
+    TRACE_ON_TASK_START_READY(thread_ptr->tx_thread_ready_next)
 
 #ifdef TX_ENABLE_EVENT_TRACE
 

@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -63,6 +62,14 @@
 /*  CALLED BY                                                             */
 /*                                                                        */
 /*    ThreadX Scheduler                                                   */
+/*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
 /*                                                                        */
 /**************************************************************************/
 #ifndef TX_TIMER_PROCESS_IN_ISR
@@ -296,7 +303,9 @@ TX_TIMER                    *timer_ptr;
                 if (timeout_function != TX_NULL)
                 {
 
+                    TRACE_RECORD_ENTER_TIMER(TX_POINTER_TO_ULONG_CONVERT(current_timer));
                     (timeout_function) (timeout_param);
+                    TRACE_RECORD_EXIT_TIMER();
                 }
 
                 /* Lockout interrupts again.  */

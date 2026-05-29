@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -75,6 +74,24 @@
 /*    Application Code                                                    */
 /*    _tx_timer_initialize                  Create system timer thread    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020      William E. Lamie        Initial Version 6.0           */
+/*  09-30-2020      William E. Lamie        Modified comment(s), and      */
+/*                                            changed stack calculations  */
+/*                                            to use ALIGN_TYPE integers, */
+/*                                            resulting in version 6.1    */
+/*  06-02-2021      William E. Lamie        Modified comment(s), and      */
+/*                                            supported TX_MISRA_ENABLE,  */
+/*  08-02-2021      Scott Larson            Removed unneeded cast,        */
+/*                                            resulting in version 6.1.8  */
+/*  10-31-2023      Xiuwen Cai              Modified comment(s),          */
+/*                                            added option for random     */
+/*                                            number stack filling,       */
+/*                                            resulting in version 6.3.0  */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_thread_create(TX_THREAD *thread_ptr, CHAR *name_ptr, VOID (*entry_function)(ULONG id), ULONG entry_input,
                             VOID *stack_start, ULONG stack_size, UINT priority, UINT preempt_threshold,
@@ -93,6 +110,8 @@ UCHAR                   *temp_ptr;
 ALIGN_TYPE              new_stack_start;
 ALIGN_TYPE              updated_stack_start;
 #endif
+
+    TRACE_RECORD_U32x4(TRACE_API_TX_THREAD_CREATE, TX_POINTER_TO_ULONG_CONVERT(thread_ptr), TX_POINTER_TO_ULONG_CONVERT(thread_ptr), stack_size, priority);
 
 #ifndef TX_DISABLE_STACK_FILLING
 #if defined(TX_ENABLE_RANDOM_NUMBER_STACK_FILLING) && defined(TX_ENABLE_STACK_CHECKING)
@@ -252,6 +271,7 @@ ALIGN_TYPE              updated_stack_start;
 
     /* If trace is enabled, insert this event into the trace buffer.  */
     TX_TRACE_IN_LINE_INSERT(TX_TRACE_THREAD_CREATE, thread_ptr, priority, TX_POINTER_TO_ULONG_CONVERT(stack_start), stack_size, TX_TRACE_THREAD_EVENTS)
+	SEGGER_SYSVIEW_OnTaskCreate(thread_ptr->tx_thread_id);
 
     /* Register thread in the thread array structure.  */
     TX_EL_THREAD_REGISTER(thread_ptr)
@@ -366,6 +386,8 @@ ALIGN_TYPE              updated_stack_start;
         _tx_thread_system_preempt_check();
 #endif
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_CREATE, TX_SUCCESS);
 
     /* Always return a success.  */
     return(TX_SUCCESS);

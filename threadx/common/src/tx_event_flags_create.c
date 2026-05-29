@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -63,6 +62,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_event_flags_create(TX_EVENT_FLAGS_GROUP *group_ptr, CHAR *name_ptr)
 {
@@ -72,6 +79,8 @@ TX_INTERRUPT_SAVE_AREA
 TX_EVENT_FLAGS_GROUP    *next_group;
 TX_EVENT_FLAGS_GROUP    *previous_group;
 
+
+    TRACE_RECORD_U32x2(TRACE_API_TX_EVENT_FLAGS_CREATE, TX_POINTER_TO_ULONG_CONVERT(group_ptr), TX_POINTER_TO_ULONG_CONVERT(group_ptr));
 
     /* Initialize event flags control block to all zeros.  */
     TX_MEMSET(group_ptr, 0, (sizeof(TX_EVENT_FLAGS_GROUP)));
@@ -123,11 +132,15 @@ TX_EVENT_FLAGS_GROUP    *previous_group;
     /* If trace is enabled, insert this event into the trace buffer.  */
     TX_TRACE_IN_LINE_INSERT(TX_TRACE_EVENT_FLAGS_CREATE, group_ptr, TX_POINTER_TO_ULONG_CONVERT(&next_group), 0, 0, TX_TRACE_EVENT_FLAGS_EVENTS)
 
+    TRACE_NAME_RESOURCE(TX_POINTER_TO_ULONG_CONVERT(group_ptr), group_ptr->tx_event_flags_group_name)
+
     /* Log this kernel call.  */
     TX_EL_EVENT_FLAGS_CREATE_INSERT
 
     /* Restore interrupts.  */
     TX_RESTORE
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_EVENT_FLAGS_CREATE, TX_SUCCESS);
 
     /* Return TX_SUCCESS.  */
     return(TX_SUCCESS);

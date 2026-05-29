@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -69,6 +68,20 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020      William E. Lamie        Initial Version 6.0           */
+/*  09-30-2020      Yuxin Zhou              Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*  04-25-2022      Scott Larson            Modified comment(s),          */
+/*                                            handle 0 flags case,        */
+/*                                            resulting in version 6.1.11 */
+/*  10-31-2022      Scott Larson            Modified comment(s), always   */
+/*                                            return actual flags,        */
+/*                                            resulting in version 6.2.0  */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_event_flags_get(TX_EVENT_FLAGS_GROUP *group_ptr, ULONG requested_flags,
                     UINT get_option, ULONG *actual_flags_ptr, ULONG wait_option)
@@ -92,6 +105,8 @@ TX_THREAD       *previous_thread;
 UINT            interrupted_set_request;
 #endif
 
+
+    TRACE_RECORD_U32(TRACE_API_TX_EVENT_FLAGS_GET, TX_POINTER_TO_ULONG_CONVERT(group_ptr));
 
     /* Disable interrupts to examine the event flags group.  */
     TX_DISABLE
@@ -386,6 +401,8 @@ UINT            interrupted_set_request;
 
     /* Restore interrupts.  */
     TX_RESTORE
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_EVENT_FLAGS_GET, status);
 
     /* Return completion status.  */
     return(status);

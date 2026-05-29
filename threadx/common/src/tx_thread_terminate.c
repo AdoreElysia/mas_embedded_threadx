@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -68,6 +67,14 @@
 /*                                                                        */
 /*    Application code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_thread_terminate(TX_THREAD *thread_ptr)
 {
@@ -81,6 +88,8 @@ VOID        (*entry_exit_notify)(TX_THREAD *notify_thread_ptr, UINT id);
 UINT        status;
 ULONG       suspension_sequence;
 
+
+	TRACE_RECORD_U32(TRACE_API_TX_THREAD_TERMINATE, TX_POINTER_TO_ULONG_CONVERT(thread_ptr));
 
     /* Default to successful completion.  */
     status =  TX_SUCCESS;
@@ -297,6 +306,8 @@ ULONG       suspension_sequence;
 
     /* Check for preemption.  */
     _tx_thread_system_preempt_check();
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_TERMINATE, status);
 
     /* Return completion status.  */
     return(status);

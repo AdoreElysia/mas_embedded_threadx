@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -73,6 +72,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_queue_performance_info_get(TX_QUEUE *queue_ptr, ULONG *messages_sent, ULONG *messages_received,
                     ULONG *empty_suspensions, ULONG *full_suspensions, ULONG *full_errors, ULONG *timeouts)
@@ -83,6 +90,8 @@ UINT  _tx_queue_performance_info_get(TX_QUEUE *queue_ptr, ULONG *messages_sent, 
 TX_INTERRUPT_SAVE_AREA
 UINT                    status;
 
+
+    TRACE_RECORD_U32(TRACE_API_TX_QUEUE_PERFORMACE_INFO_GET, TX_POINTER_TO_ULONG_CONVERT(queue_ptr));
 
     /* Determine if this is a legal request.  */
     if (queue_ptr == TX_NULL)
@@ -166,6 +175,8 @@ UINT                    status;
 UINT                    status;
 
 
+    TRACE_RECORD_U32(TRACE_API_TX_QUEUE_PERFORMACE_INFO_GET, TX_POINTER_TO_ULONG_CONVERT(queue_ptr));
+
     /* Access input arguments just for the sake of lint, MISRA, etc.  */
     if (queue_ptr != TX_NULL)
     {
@@ -216,6 +227,8 @@ UINT                    status;
         status =  TX_FEATURE_NOT_ENABLED;
     }
 #endif
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_QUEUE_PERFORMACE_INFO_GET, status);
 
     /* Return completion status.  */
     return(status);

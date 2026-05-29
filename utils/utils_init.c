@@ -9,8 +9,10 @@
 #include "utils_init.h"
 
 #include "ulog.h"
+#include "SEGGER_SYSVIEW.h"
 
 void UTILS_Init(void)
 {
-    ulog_init();
+    ulog_init();           // RTT must be initialized first
+    SEGGER_SYSVIEW_Conf(); // SystemView configures RTT channel 1
 }

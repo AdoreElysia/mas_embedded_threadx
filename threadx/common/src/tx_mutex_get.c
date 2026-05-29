@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -65,6 +64,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_mutex_get(TX_MUTEX *mutex_ptr, ULONG wait_option)
 {
@@ -79,6 +86,8 @@ TX_THREAD       *next_thread;
 TX_THREAD       *previous_thread;
 UINT            status;
 
+
+    TRACE_RECORD_U32x2(TRACE_API_TX_MUTEX_GET, TX_POINTER_TO_ULONG_CONVERT(mutex_ptr), wait_option);
 
     /* Disable interrupts to get an instance from the mutex.  */
     TX_DISABLE
@@ -396,6 +405,8 @@ UINT            status;
             status =  TX_NOT_AVAILABLE;
         }
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_MUTEX_GET, status);
 
     /* Return completion status.  */
     return(status);

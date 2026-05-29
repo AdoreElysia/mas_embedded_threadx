@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -70,6 +69,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _txe_mutex_create(TX_MUTEX *mutex_ptr, CHAR *name_ptr, UINT inherit, UINT mutex_control_block_size)
 {
@@ -83,6 +90,8 @@ TX_MUTEX        *next_mutex;
 TX_THREAD       *thread_ptr;
 #endif
 
+
+    TRACE_RECORD_U32x3(TRACE_API_TXE_MUTEX_CREATE, TX_POINTER_TO_ULONG_CONVERT(mutex_ptr), TX_POINTER_TO_ULONG_CONVERT(mutex_ptr), inherit);
 
     /* Default status to success.  */
     status =  TX_SUCCESS;
@@ -208,6 +217,8 @@ TX_THREAD       *thread_ptr;
         /* Call actual mutex create function.  */
         status =  _tx_mutex_create(mutex_ptr, name_ptr, inherit);
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TXE_MUTEX_CREATE, status);
 
     /* Return completion status.  */
     return(status);

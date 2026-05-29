@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -67,6 +66,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_timer_info_get(TX_TIMER *timer_ptr, CHAR **name, UINT *active, ULONG *remaining_ticks,
                 ULONG *reschedule_ticks, TX_TIMER **next_timer)
@@ -80,6 +87,8 @@ ULONG               ticks_left;
 UINT                timer_active;
 UINT                active_timer_list;
 
+
+	TRACE_RECORD_U32(TRACE_API_TX_TIMER_INFO_GET, TX_POINTER_TO_ULONG_CONVERT(timer_ptr));
 
     /* Disable interrupts.  */
     TX_DISABLE
@@ -235,6 +244,8 @@ UINT                active_timer_list;
 
     /* Restore interrupts.  */
     TX_RESTORE
+
+	TRACE_RECORD_END_CALL_U32(TRACE_API_TX_TIMER_INFO_GET, TX_SUCCESS);
 
     /* Return completion status.  */
     return(TX_SUCCESS);

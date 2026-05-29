@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -63,6 +62,18 @@
 /*                                                                        */
 /*    Application code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*  10-16-2020     Yuxin Zhou               Modified comment(s), and      */
+/*                                            added type cast to address  */
+/*                                            a MISRA compliance issue,   */
+/*                                            resulting in version 6.1.1  */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_thread_suspend(TX_THREAD *thread_ptr)
 {
@@ -72,6 +83,8 @@ TX_INTERRUPT_SAVE_AREA
 TX_THREAD  *current_thread;
 UINT        status;
 
+
+    TRACE_RECORD_U32(TRACE_API_TX_THREAD_SUSPEND, TX_POINTER_TO_ULONG_CONVERT(thread_ptr));
 
 #ifndef TX_INLINE_THREAD_RESUME_SUSPEND
 
@@ -156,6 +169,8 @@ UINT        status;
             status =  TX_SUCCESS;
 #else
 
+            TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_SUSPEND, TX_SUCCESS);
+
             /* If MISRA is not enabled, return directly.  */
             return(TX_SUCCESS);
 #endif
@@ -191,6 +206,8 @@ UINT        status;
 
     /* Restore interrupts.  */
     TX_RESTORE
+
+	TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_SUSPEND, status);
 
     /* Always return success, since this function does not perform error
        checking.  */
@@ -503,6 +520,8 @@ ULONG                       time_stamp =  ((ULONG) 0);
                         _tx_thread_system_return();
                     }
 
+                    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_SUSPEND, TX_SUCCESS);
+
                     /* Return to caller.  */
                     return(TX_SUCCESS);
 #endif
@@ -697,6 +716,8 @@ ULONG                       time_stamp =  ((ULONG) 0);
                     _tx_thread_system_return();
                 }
 
+                TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_SUSPEND, TX_SUCCESS);
+
                 /* Return to caller.  */
                 return(TX_SUCCESS);
 #endif
@@ -829,6 +850,8 @@ ULONG                       time_stamp =  ((ULONG) 0);
 
     /* Restore interrupts.  */
     TX_RESTORE
+
+	TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_SUSPEND, status);
 
     /* Return completion status.  */
     return(status);

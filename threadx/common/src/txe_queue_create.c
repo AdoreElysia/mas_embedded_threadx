@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -71,6 +70,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _txe_queue_create(TX_QUEUE *queue_ptr, CHAR *name_ptr, UINT message_size,
                         VOID *queue_start, ULONG queue_size, UINT queue_control_block_size)
@@ -85,6 +92,8 @@ TX_QUEUE        *next_queue;
 TX_THREAD       *thread_ptr;
 #endif
 
+
+    TRACE_RECORD_U32x4(TRACE_API_TXE_QUEUE_CREATE, TX_POINTER_TO_ULONG_CONVERT(queue_ptr), TX_POINTER_TO_ULONG_CONVERT(queue_ptr), message_size, queue_size);
 
     /* Default status to success.  */
     status =  TX_SUCCESS;
@@ -171,8 +180,8 @@ TX_THREAD       *thread_ptr;
             status =  TX_SIZE_ERROR;
         }
 
-        /* Check for an invalid message size - greater than TX_QUEUE_MESSAGE_MAX_SIZE 16 by default.  */
-        else if (message_size > TX_QUEUE_MESSAGE_MAX_SIZE)
+        /* Check for an invalid message size - greater than 16.  */
+        else if (message_size > TX_16_ULONG)
         {
 
             /* Invalid message size specified.  */
@@ -225,6 +234,8 @@ TX_THREAD       *thread_ptr;
         /* Call actual queue create function.  */
         status =  _tx_queue_create(queue_ptr, name_ptr, message_size, queue_start, queue_size);
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TXE_QUEUE_CREATE, status);
 
     /* Return completion status.  */
     return(status);

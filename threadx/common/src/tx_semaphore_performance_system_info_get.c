@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -69,6 +68,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_semaphore_performance_system_info_get(ULONG *puts, ULONG *gets, ULONG *suspensions, ULONG *timeouts)
 {
@@ -77,6 +84,8 @@ UINT  _tx_semaphore_performance_system_info_get(ULONG *puts, ULONG *gets, ULONG 
 
 TX_INTERRUPT_SAVE_AREA
 
+
+    TRACE_RECORD_VOID(TRACE_API_TX_SEMAPHORE_PERFORMANCE_SYSTEM_INFO_GET);
 
     /* Disable interrupts.  */
     TX_DISABLE
@@ -121,6 +130,8 @@ TX_INTERRUPT_SAVE_AREA
     /* Restore interrupts.  */
     TX_RESTORE
 
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_SEMAPHORE_PERFORMANCE_SYSTEM_INFO_GET, TX_SUCCESS);
+
     /* Return completion status.  */
     return(TX_SUCCESS);
 
@@ -128,6 +139,8 @@ TX_INTERRUPT_SAVE_AREA
 
 UINT        status;
 
+
+    TRACE_RECORD_VOID(TRACE_API_TX_SEMAPHORE_PERFORMANCE_SYSTEM_INFO_GET);
 
     /* Access input arguments just for the sake of lint, MISRA, etc.  */
     if (puts != TX_NULL)
@@ -160,6 +173,8 @@ UINT        status;
         /* Not enabled, return error.  */
         status =  TX_FEATURE_NOT_ENABLED;
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_SEMAPHORE_PERFORMANCE_SYSTEM_INFO_GET, status);
 
     /* Return completion status.  */
     return(status);

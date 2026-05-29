@@ -66,6 +66,10 @@
     .global     __tx_PendSVHandler                  @ PendSV
     .global     __tx_SysTickHandler                 @ SysTick
     .global     __tx_IntHandler                     @ Int 0
+#if (defined(ENABLE_TRACE_API))
+    .global     trace_isr_enter
+    .global     trace_isr_exit
+#endif
 @
 @
 
@@ -217,10 +221,15 @@ __tx_IntHandler:
 #ifdef TX_EXECUTION_PROFILE_ENABLE
     BL      _tx_execution_isr_enter             @ Call the ISR enter function
 #endif
+#if (defined(ENABLE_TRACE_API))
+    BL		trace_isr_enter
+#endif
 
 @    /* Do interrupt handler work here */
 @    /* BL <your C Function>.... */
-
+#if (defined(ENABLE_TRACE_API))
+    BL		trace_isr_exit
+#endif
 #ifdef TX_EXECUTION_PROFILE_ENABLE
     BL      _tx_execution_isr_exit              @ Call the ISR exit function
 #endif
@@ -242,7 +251,13 @@ SysTick_Handler:
 #ifdef TX_EXECUTION_PROFILE_ENABLE
     BL      _tx_execution_isr_enter             @ Call the ISR enter function
 #endif
+#if (defined(ENABLE_TRACE_API))
+    BL		trace_isr_enter
+#endif
     BL      _tx_timer_interrupt
+#if (defined(ENABLE_TRACE_API))
+    BL		trace_isr_exit
+#endif
 #ifdef TX_EXECUTION_PROFILE_ENABLE
     BL      _tx_execution_isr_exit              @ Call the ISR exit function
 #endif

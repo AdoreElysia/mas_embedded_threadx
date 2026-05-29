@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -72,6 +71,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _txe_event_flags_get(TX_EVENT_FLAGS_GROUP *group_ptr, ULONG requested_flags,
                     UINT get_option, ULONG *actual_flags_ptr, ULONG wait_option)
@@ -83,6 +90,8 @@ UINT            status;
 TX_THREAD       *current_thread;
 #endif
 
+
+    TRACE_RECORD_U32(TRACE_API_TXE_EVENT_FLAGS_GET, TX_POINTER_TO_ULONG_CONVERT(group_ptr));
 
     /* Default status to success.  */
     status =  TX_SUCCESS;
@@ -164,6 +173,8 @@ TX_THREAD       *current_thread;
         /* Call actual event flags get function.  */
         status =  _tx_event_flags_get(group_ptr, requested_flags, get_option, actual_flags_ptr, wait_option);
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TXE_EVENT_FLAGS_GET, status);
 
     /* Return completion status.  */
     return(status);

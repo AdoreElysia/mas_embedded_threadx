@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -69,6 +68,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _txe_semaphore_create(TX_SEMAPHORE *semaphore_ptr, CHAR *name_ptr, ULONG initial_count, UINT semaphore_control_block_size)
 {
@@ -82,6 +89,8 @@ TX_SEMAPHORE        *next_semaphore;
 TX_THREAD           *thread_ptr;
 #endif
 
+
+    TRACE_RECORD_U32x3(TRACE_API_TXE_SEMAPHORE_CREATE, TX_POINTER_TO_ULONG_CONVERT(semaphore_ptr), TX_POINTER_TO_ULONG_CONVERT(semaphore_ptr), initial_count);
 
     /* Default status to success.  */
     status =  TX_SUCCESS;
@@ -195,6 +204,8 @@ TX_THREAD           *thread_ptr;
         /* Call actual semaphore create function.  */
         status =  _tx_semaphore_create(semaphore_ptr, name_ptr, initial_count);
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TXE_SEMAPHORE_CREATE, status);
 
     /* Return completion status.  */
     return(status);

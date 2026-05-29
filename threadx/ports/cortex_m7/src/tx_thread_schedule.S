@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -32,6 +31,10 @@
 #ifdef TX_LOW_POWER
     .global tx_low_power_enter
     .global tx_low_power_exit
+#endif
+#if (defined(ENABLE_TRACE_API))
+    .global trace_task_exec
+    .global trace_task_stop
 #endif
     .text
     .align 4
@@ -68,6 +71,18 @@
 /*                                                                        */
 /*    _tx_initialize_kernel_enter          ThreadX entry function         */
 /*    _tx_thread_system_return             Return to system from thread   */
+/*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  06-02-2021      Scott Larson            Initial Version 6.1.7         */
+/*  01-31-2022      Scott Larson            Fixed predefined macro name,  */
+/*                                            resulting in version 6.1.10 */
+/*  04-25-2022      Scott Larson            Added BASEPRI support,        */
+/*                                            resulting in version 6.1.11 */
+/*  03-08-2023      Scott Larson            Include tx_user.h,            */
+/*                                            resulting in version 6.2.1  */
 /*                                                                        */
 /**************************************************************************/
 // VOID   _tx_thread_schedule(VOID)
@@ -125,6 +140,14 @@ __tx_PendSVHandler:
 
 __tx_ts_handler:
 
+#if (defined(ENABLE_TRACE_API))
+    /* Call trace_task_stop to record the task switch. */
+    CPSID   i                                       // Disable interrupts
+    PUSH    {r0, lr}                                // Save LR (and r0 just for alignment)
+    BL      trace_task_stop
+    POP     {r0, lr}                                // Recover LR
+    CPSIE   i                                       // Enable interrupts
+#endif
 #if (defined(TX_ENABLE_EXECUTION_CHANGE_NOTIFY) || defined(TX_EXECUTION_PROFILE_ENABLE))
     /* Call the thread exit function to indicate the thread is no longer executing.  */
 #ifdef TX_PORT_USE_BASEPRI
@@ -218,6 +241,13 @@ __tx_ts_restore:
     /* Setup global time-slice with thread's current time-slice.  */
 
     STR     r5, [r4]                                // Setup global time-slice
+
+#if (defined(ENABLE_TRACE_API))
+    /* Call trace_task_exec to record the task switch. */
+    PUSH    {r0, r1}                                // Save r0 and r1
+    BL      trace_task_exec
+    POP     {r0, r1}
+#endif
 
 #if (defined(TX_ENABLE_EXECUTION_CHANGE_NOTIFY) || defined(TX_EXECUTION_PROFILE_ENABLE))
     /* Call the thread entry function to indicate the thread is executing.  */

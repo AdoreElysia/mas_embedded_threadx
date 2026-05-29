@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -67,11 +66,21 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _txe_timer_change(TX_TIMER *timer_ptr, ULONG initial_ticks, ULONG reschedule_ticks)
 {
 
 UINT    status;
+
+	TRACE_RECORD_U32x3(TRACE_API_TXE_TIMER_CHANGE, TX_POINTER_TO_ULONG_CONVERT(timer_ptr), initial_ticks, reschedule_ticks);
 
 
     /* Check for an invalid timer pointer.  */
@@ -111,6 +120,8 @@ UINT    status;
         /* Call actual application timer function.  */
         status =  _tx_timer_change(timer_ptr, initial_ticks, reschedule_ticks);
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TXE_TIMER_CHANGE, status);
 
     /* Return completion status.  */
     return(status);

@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -60,6 +59,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_timer_deactivate(TX_TIMER *timer_ptr)
 {
@@ -72,6 +79,8 @@ TX_TIMER_INTERNAL   *previous_timer;
 ULONG               ticks_left;
 UINT                active_timer_list;
 
+
+	TRACE_RECORD_U32(TRACE_API_TX_TIMER_DEACTIVATE, TX_POINTER_TO_ULONG_CONVERT(timer_ptr));
 
     /* Setup internal timer pointer.  */
     internal_ptr =  &(timer_ptr -> tx_timer_internal);
@@ -237,6 +246,8 @@ UINT                active_timer_list;
 
     /* Restore interrupts to previous posture.  */
     TX_RESTORE
+
+	TRACE_RECORD_END_CALL_U32(TRACE_API_TX_TIMER_DEACTIVATE, TX_SUCCESS);
 
     /* Return TX_SUCCESS.  */
     return(TX_SUCCESS);

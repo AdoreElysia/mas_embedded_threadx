@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -65,6 +64,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_semaphore_delete(TX_SEMAPHORE *semaphore_ptr)
 {
@@ -77,6 +84,8 @@ UINT            suspended_count;
 TX_SEMAPHORE    *next_semaphore;
 TX_SEMAPHORE    *previous_semaphore;
 
+
+    TRACE_RECORD_U32(TRACE_API_TX_SEMAPHORE_DELETE, TX_POINTER_TO_ULONG_CONVERT(semaphore_ptr));
 
     /* Disable interrupts to remove the semaphore from the created list.  */
     TX_DISABLE
@@ -194,6 +203,8 @@ TX_SEMAPHORE    *previous_semaphore;
 
     /* Check for preemption.  */
     _tx_thread_system_preempt_check();
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_SEMAPHORE_DELETE, TX_SUCCESS);
 
     /* Return TX_SUCCESS.  */
     return(TX_SUCCESS);

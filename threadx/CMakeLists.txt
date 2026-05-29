@@ -292,11 +292,21 @@ configure_file(
     COPYONLY
 )
 
+# SystemView include directories (required by tx_api.h -> SEGGER_SYSVIEW_ThreadX.h)
+# SEGGER_SYSVIEW_ConfDefaults.h also needs SEGGER_RTT_Conf.h from ulog/
+set(_SYSVIEW_DIR ${CMAKE_CURRENT_LIST_DIR}/../utils/SystemView)
+
+
 target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${_TX_COMMON_INC}
         ${_TX_PORT_INC}
         ${_TX_CUSTOM_INC}
+        ${_SYSVIEW_DIR}/Config
+        ${_SYSVIEW_DIR}/SEGGER
+        ${_SYSVIEW_DIR}/SYSVIEW
+        ${_SYSVIEW_DIR}/Sample/ThreadX
+        ${CMAKE_CURRENT_LIST_DIR}/../utils/ulog
 )
 
 # ---------------------------------------------------------------------------
@@ -306,6 +316,7 @@ target_compile_definitions(${PROJECT_NAME}
     PUBLIC
         TX_INCLUDE_USER_DEFINE_FILE
         TX_ENABLE_FPU_SUPPORT
+        ENABLE_TRACE_API
 )
 
 # ---------------------------------------------------------------------------

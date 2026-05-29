@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -71,6 +70,14 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*                                                                        */
 /**************************************************************************/
 UINT  _txe_event_flags_info_get(TX_EVENT_FLAGS_GROUP *group_ptr, CHAR **name, ULONG *current_flags,
                     TX_THREAD **first_suspended, ULONG *suspended_count,
@@ -79,6 +86,8 @@ UINT  _txe_event_flags_info_get(TX_EVENT_FLAGS_GROUP *group_ptr, CHAR **name, UL
 
 UINT        status;
 
+
+    TRACE_RECORD_U32(TRACE_API_TXE_EVENT_FLAGS_INFO_GET, TX_POINTER_TO_ULONG_CONVERT(group_ptr));
 
     /* Check for an invalid event flag group pointer.  */
     if (group_ptr == TX_NULL)
@@ -102,6 +111,8 @@ UINT        status;
         status =  _tx_event_flags_info_get(group_ptr, name, current_flags, first_suspended,
                                                             suspended_count, next_group);
     }
+
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TXE_EVENT_FLAGS_INFO_GET, status);
 
     /* Return completion status.  */
     return(status);

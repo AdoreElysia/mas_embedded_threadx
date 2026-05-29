@@ -1,11 +1,10 @@
 /***************************************************************************
- * Copyright (c) 2024 Microsoft Corporation
- * Copyright (c) 2026-present Eclipse ThreadX contributors
- *
+ * Copyright (c) 2024 Microsoft Corporation 
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the MIT License which is available at
  * https://opensource.org/licenses/MIT.
- *
+ * 
  * SPDX-License-Identifier: MIT
  **************************************************************************/
 
@@ -67,6 +66,21 @@
 /*                                                                        */
 /*    Application Code                                                    */
 /*                                                                        */
+/*  RELEASE HISTORY                                                       */
+/*                                                                        */
+/*    DATE              NAME                      DESCRIPTION             */
+/*                                                                        */
+/*  05-19-2020     William E. Lamie         Initial Version 6.0           */
+/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
+/*                                            resulting in version 6.1    */
+/*  06-02-2021     Yuxin Zhou               Modified comment(s), added    */
+/*                                            conditional compilation     */
+/*                                            for ARMv8-M (Cortex M23/33) */
+/*                                            resulting in version 6.1.7  */
+/*  10-15-2021     Yuxin Zhou               Modified comment(s), improved */
+/*                                            stack check error handling, */
+/*                                            resulting in version 6.1.9  */
+/*                                                                        */
 /**************************************************************************/
 UINT  _tx_thread_stack_error_notify(VOID (*stack_error_handler)(TX_THREAD *thread_ptr))
 {
@@ -75,6 +89,8 @@ UINT  _tx_thread_stack_error_notify(VOID (*stack_error_handler)(TX_THREAD *threa
 
 UINT        status;
 
+
+    TRACE_RECORD_VOID(TRACE_API_TX_THREAD_STACK_ERROR_NOTIFY);
 
     /* Access input argument just for the sake of lint, MISRA, etc.  */
     if (stack_error_handler != TX_NULL)
@@ -90,6 +106,8 @@ UINT        status;
         status =  TX_FEATURE_NOT_ENABLED;
     }
 
+    TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_STACK_ERROR_NOTIFY, status);
+
     /* Return completion status.  */
     return(status);
 
@@ -97,6 +115,8 @@ UINT        status;
 
 TX_INTERRUPT_SAVE_AREA
 
+
+    TRACE_RECORD_VOID(TRACE_API_TX_THREAD_STACK_ERROR_NOTIFY);
 
     /* Disable interrupts.  */
     TX_DISABLE
@@ -112,6 +132,8 @@ TX_INTERRUPT_SAVE_AREA
 
     /* Restore interrupts.  */
     TX_RESTORE
+
+	TRACE_RECORD_END_CALL_U32(TRACE_API_TX_THREAD_STACK_ERROR_NOTIFY, TX_SUCCESS);
 
     /* Return success to caller.  */
     return(TX_SUCCESS);
