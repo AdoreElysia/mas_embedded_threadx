@@ -1,4 +1,12 @@
 /*
+ * @Author: AdoreElysia w2006825@qq.com
+ * @Date: 2026-06-05 21:07:40
+ * @LastEditors: AdoreElysia w2006825@qq.com
+ * @LastEditTime: 2026-07-11 17:32:13
+ * @FilePath: \mas_embedded_threadx\apps\templates\chassis_board\chassis_func\chassis_func.c
+ * @Description: 
+ */
+/*
  * @Description: 底盘功能实现模板 (底盘板)
  *
  * TODO: 实现底盘控制逻辑
