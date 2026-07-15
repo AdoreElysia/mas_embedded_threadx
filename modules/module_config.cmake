@@ -64,3 +64,7 @@ set(BOARDCOMM_OFFLINE_ENABLE 1)     # 离线检测开启
 set(VISION_TASK_STACK_SIZE   1024)   # 任务栈大小
 set(VISION_TASK_PRIORITY     10)     # 任务优先级
 set(VISION_OFFLINE_ENABLE    1)      # 离线检测开启
+
+# PS2 默认参数
+set(MODULE_PS2              0)      # PS2 模块开关 (默认关闭)
+set(PS2_OFFLINE_TIMEOUT_MS  200)    # 离线超时(ms)

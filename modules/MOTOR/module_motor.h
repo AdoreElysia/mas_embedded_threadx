@@ -14,6 +14,7 @@
 #include "motor_damiao.h"
 #include "motor_servo.h"
 #include "motor_zdt.h"
+#include "motor_lingkong.h"
 
 #ifndef MOTOR_TASK_STACK_SIZE
 #define MOTOR_TASK_STACK_SIZE 1024 /* 检测任务栈 (字节) */

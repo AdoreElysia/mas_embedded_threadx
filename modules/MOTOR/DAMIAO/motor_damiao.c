@@ -14,6 +14,7 @@
 /* 达妙电机参数配置表 */
 static const DM_Motor_Params_t dm_motor_params[] = {
     {-12.5f, 12.5f, -30.0f, 30.0f, 0.0f, 500.0f, 0.0f, 5.0f, -10.0f, 10.0f}, /* DM4310 */
+    {-12.5f, 12.5f, -30.0f, 30.0f, 0.0f, 500.0f, 0.0f, 5.0f, -10.0f, 10.0f}, /* DM6220 (TODO: 调试助手读取实际PMAX/VMAX/TMAX) */
 };
 
 static const DM_Motor_Params_t *dm_get_params(Motor_Type_e type)
@@ -22,7 +23,8 @@ static const DM_Motor_Params_t *dm_get_params(Motor_Type_e type)
     {
     case DM4310:
         return &dm_motor_params[0];
-    /* 后续在此添加其他型号映射 */
+    case DM6220:
+        return &dm_motor_params[1];
     default:
         return &dm_motor_params[0];
     }

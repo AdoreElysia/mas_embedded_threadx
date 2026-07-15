@@ -88,6 +88,7 @@ typedef enum
     /* 舵机 */
     SERVO_GENERIC,
     /* UART 电机 */
+    MF9025,
     ZDT_STEEP_MOTOR,
 } Motor_Type_e;
 

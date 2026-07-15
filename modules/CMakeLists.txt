@@ -90,6 +90,7 @@ if(MODULE_MOTOR)
         MOTOR/DAMIAO/motor_damiao.c
         MOTOR/SERVO/motor_servo.c
         MOTOR/ZDT_STEPMOTOR/motor_zdt.c
+        MOTOR/LINGKONG/motor_lingkong.c
     )
     list(APPEND _module_includes
         ${CMAKE_CURRENT_SOURCE_DIR}/MOTOR
@@ -98,6 +99,17 @@ if(MODULE_MOTOR)
         ${CMAKE_CURRENT_SOURCE_DIR}/MOTOR/SERVO
         ${CMAKE_CURRENT_SOURCE_DIR}/MOTOR/ZDT_STEPMOTOR
         ${CMAKE_CURRENT_SOURCE_DIR}/MOTOR/POWER_CONTROL
+        ${CMAKE_CURRENT_SOURCE_DIR}/MOTOR/LINGKONG
+    )
+endif()
+
+if(MODULE_PS2)
+    list(APPEND _module_sources
+        REMOTE/PS2/ps2.c
+        REMOTE/PS2/module_ps2.c
+    )
+    list(APPEND _module_includes
+        ${CMAKE_CURRENT_SOURCE_DIR}/REMOTE/PS2
     )
 endif()
 

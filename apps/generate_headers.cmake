@@ -72,6 +72,7 @@ file(WRITE ${_generated_dir}/module_config.h
 #define MODULE_MOTOR     ${MODULE_MOTOR}
 #define MODULE_VISION    ${MODULE_VISION}
 #define MODULE_BOARDCOMM ${MODULE_BOARDCOMM}
+#define MODULE_PS2       ${MODULE_PS2}
 
 /* 参数配置 */
 
@@ -122,6 +123,11 @@ ${_BOARDCOMM_CAN}
 /* VISION 参数 */
 #define VISION_TASK_STACK_SIZE   ${VISION_TASK_STACK_SIZE}
 #define VISION_TASK_PRIORITY     ${VISION_TASK_PRIORITY}
+
+/* PS2 参数 */
+#ifndef PS2_OFFLINE_TIMEOUT_MS
+#define PS2_OFFLINE_TIMEOUT_MS  ${PS2_OFFLINE_TIMEOUT_MS}
+#endif
 
 #endif /* _MODULE_CONFIG_H_ */
 ")

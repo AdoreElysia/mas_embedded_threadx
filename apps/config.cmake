@@ -2,8 +2,8 @@
 # 在这里修改 ROBOT / BOARD 
 
 # 目标机器人 & 板型
-set(ROBOT "sentry") # hero / engineer / infantry3 / infantry4 / infantry5 / drone / sentry / darts / customcontrol
-set(BOARD "gimbal")    # single / gimbal / chassis
+set(ROBOT "target") # hero / engineer / infantry3 / infantry4 / infantry5 / drone / sentry / darts / target / customcontrol
+set(BOARD "single")    # single / gimbal / chassis
 
 # 加载默认模块配置
 include(${CMAKE_CURRENT_LIST_DIR}/../modules/module_config.cmake)
@@ -25,7 +25,7 @@ set(CHASSIS_BOARD 0)
 set(${BOARD_UPPER}_BOARD 1)
 
 # 模块开关
-foreach(_m OFFLINE REMOTE BMI088 INS REFEREE SUPERCAP WT606 MOTOR VISION BOARDCOMM)
+foreach(_m OFFLINE REMOTE BMI088 INS REFEREE SUPERCAP WT606 MOTOR VISION BOARDCOMM PS2)
     set(MODULE_${_m} 0)
 endforeach()
 

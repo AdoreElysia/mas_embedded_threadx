@@ -35,6 +35,9 @@
 #if MODULE_VISION
 #include "module_vision.h"
 #endif
+#if MODULE_PS2
+#include "module_ps2.h"
+#endif
 #if MODULE_BOARDCOMM
 #include "module_boardcomm.h"
 #endif
