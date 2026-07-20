@@ -1,9 +1,5 @@
-# 机器人 & 板型 配置
-# 在这里修改 ROBOT / BOARD 
-
-# 目标机器人 & 板型
-set(ROBOT "sentry") # hero / engineer / infantry3 / infantry4 / infantry5 / drone / sentry / darts / customcontrol
-set(BOARD "gimbal")    # single / gimbal / chassis
+# 机器人 & 板型 配置处理
+# ROBOT / BOARD 由各板级 CMakeLists.txt 在 include 前定义
 
 # 加载默认模块配置
 include(${CMAKE_CURRENT_LIST_DIR}/../modules/module_config.cmake)
@@ -33,3 +29,4 @@ set(_enabled ${MODULES_${BOARD_UPPER}})
 foreach(_m ${_enabled})
     set(MODULE_${_m} 1)
 endforeach()
+

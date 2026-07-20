@@ -127,4 +127,12 @@ target_compile_options(modules PRIVATE -O2 -include module_config.h)
 
 target_include_directories(modules PUBLIC ${_module_includes})
 
-target_link_libraries(modules PUBLIC stm32cubemx azrtos::threadx m CMSISDSP bsp utils cherryusb)
+if(TARGET CMSISDSP)
+    target_link_libraries(modules PUBLIC stm32cubemx azrtos::threadx m CMSISDSP bsp utils)
+else()
+    target_link_libraries(modules PUBLIC stm32cubemx azrtos::threadx m bsp utils)
+endif()
+
+if(TARGET cherryusb)
+    target_link_libraries(modules PUBLIC cherryusb)
+endif()

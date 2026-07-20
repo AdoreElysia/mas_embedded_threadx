@@ -40,4 +40,8 @@ target_include_directories(app PUBLIC
     ${_robot_includes}
 )
 
-target_link_libraries(app PUBLIC stm32cubemx azrtos::threadx utils bsp CMSISDSP modules)
+if(TARGET CMSISDSP)
+    target_link_libraries(app PUBLIC stm32cubemx azrtos::threadx utils bsp CMSISDSP modules)
+else()
+    target_link_libraries(app PUBLIC stm32cubemx azrtos::threadx utils bsp modules)
+endif()

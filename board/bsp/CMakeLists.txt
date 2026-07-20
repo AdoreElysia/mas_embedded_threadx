@@ -32,4 +32,8 @@ target_include_directories(bsp PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/CAN
 )
 
-target_link_libraries(bsp PUBLIC stm32cubemx azrtos::threadx utils cherryusb)
+if(TARGET cherryusb)
+    target_link_libraries(bsp PUBLIC stm32cubemx azrtos::threadx utils cherryusb)
+else()
+    target_link_libraries(bsp PUBLIC stm32cubemx azrtos::threadx utils)
+endif()
