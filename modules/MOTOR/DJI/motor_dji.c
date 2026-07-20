@@ -18,6 +18,8 @@
 #define MOTOR_SENDER_SIZE 15
 #elif defined(STM32F407xx)
 #define MOTOR_SENDER_SIZE 10
+#elif defined(STM32F103xB)
+#define MOTOR_SENDER_SIZE 5
 #endif
 
 /*
