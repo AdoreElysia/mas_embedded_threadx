@@ -19,7 +19,7 @@ static DJI_Motor_t *test_motor = NULL;
 void Robot_Control_Init(void)
 {
     Motor_Init_Config_s cfg = {
-        .motor_type = M3508,
+        .motor_init_info.motor_type = M3508,
         .transport  = MOTOR_TRANSPORT_CAN,
         .transport_config.can = {
             .hcan = BSP_CAN_HANDLE1,
