@@ -42,6 +42,12 @@ void BSP_Init(void)
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_SET);
     BSP_DWT_Delay(0.1);
     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
+#elif defined(STM32F103xB)
+    BSP_DWT_Init(72);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
+    BSP_DWT_Delay(0.1);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_SET);
+    BSP_DWT_Delay(0.1);
 #endif
 
     BSP_LED_Init();

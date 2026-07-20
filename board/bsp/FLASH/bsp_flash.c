@@ -5,6 +5,8 @@
 #if defined(STM32F407xx)
 
 #include "stm32f4xx_hal.h"
+#elif defined(STM32F103xB)
+#include "stm32f1xx_hal.h"
 
 /* 用户Flash区域：第11扇区，地址0x080E0000，大小128KB */
 #define USER_FLASH_SECTOR      FLASH_SECTOR_11
@@ -101,6 +103,24 @@ uint8_t BSP_FLASH_Read_Buffer(uint8_t *buffer, uint32_t length)
 
     memcpy(buffer, (uint8_t *)USER_FLASH_SECTOR_ADDR, length);
     return 0;
+}
+
+#elif defined(STM32F103xB)
+static uint8_t BSP_FLASH_Erase_Sector(void)
+{
+    uint32_t PageError = 0;
+    FLASH_EraseInitTypeDef EraseInitStruct;
+    EraseInitStruct.TypeErase    = FLASH_TYPEERASE_PAGES,
+    EraseInitStruct.PageAddress  = USER_FLASH_SECTOR,
+    EraseInitStruct.NbPages      = 1,
+    };
+    if (HAL_FLASHEx_Erase(&EraseInitStruct, &PageError) != HAL_OK)
+    {
+        return 1;
+    }
+    return 0;
+}
+return 0;
 }
 
 #elif defined(STM32H723xx)

@@ -29,6 +29,10 @@
 #elif defined(STM32F407xx)
 #include "stm32f407xx.h"
 
+#define BSP_DWT_MEASURE_START()
+#elif defined(STM32F103xB)
+#include "stm32f103xb.h"
+
 #define BSP_DWT_MEASURE_START()                                                                                                                      \
     do                                                                                                                                               \
     {                                                                                                                                                \
