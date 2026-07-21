@@ -27,3 +27,9 @@ set(SUPERCAP_CAN            BSP_CAN_HANDLE2)
 # BOARDCOMM 参数
 set(BOARDCOMM_CAN           BSP_CAN_HANDLE2)
 
+
+# ── F103 RAM 优化: 缩减线程栈大小 (仅 20KB RAM) ──
+set(OFFLINE_TASK_STACK_SIZE  512)   # 离线检测 512B 足够
+set(REMOTE_TASK_STACK_SIZE   512)   # 遥控器解码 512B
+set(REMOTE_TASK_VT_PRIORITY  8)     # 图传优先级
+set(MOTOR_TASK_STACK_SIZE    512)   # 电机控制 512B
