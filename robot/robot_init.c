@@ -20,7 +20,11 @@
 #define LOG_TAG "Robot_Init"
 #include "ulog_def.h"
 
-#define TX_APP_MEM_POOL_SIZE (20 * 1024) // 20KB 应用内存池大小
+#if defined(STM32F103xB)
+#define TX_APP_MEM_POOL_SIZE (4 * 1024)   // 4KB F103: 仅20KB RAM
+#else
+#define TX_APP_MEM_POOL_SIZE (20 * 1024)  // 20KB F407/H723: 充足RAM
+#endif
 static UCHAR tx_byte_pool_buffer[TX_APP_MEM_POOL_SIZE];
 TX_BYTE_POOL tx_app_byte_pool;
 
