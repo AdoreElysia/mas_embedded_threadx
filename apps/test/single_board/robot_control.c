@@ -16,7 +16,7 @@
 
 static DJI_Motor_t *test_motor = NULL;
 
-void Robot_Control_Init(void)
+void robot_control_init(void)
 {
     Motor_Init_Config_s cfg = {
         .motor_init_info.motor_type = M3508,
@@ -46,7 +46,7 @@ void Robot_Control_Init(void)
     LOG_I("F103 single board control init");
 }
 
-void Robot_Control_Loop(void)
+void robot_control_loop(void)
 {
     Remote_Data_t *remote = Module_Remote_get_data();
     if (remote == NULL)
@@ -65,7 +65,7 @@ void Robot_Control_Loop(void)
     Motor_DJI_Flush();
 }
 
-void Robot_Control_Exit(void)
+void robot_control_exit(void)
 {
     if (test_motor)
     {
