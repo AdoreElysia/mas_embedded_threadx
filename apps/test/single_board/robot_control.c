@@ -33,6 +33,8 @@ static void robot_control_task(ULONG thread_input)
 
     while (1)
     {
+        static uint32_t _rc_log_cnt = 0;
+        if (++_rc_log_cnt % 500 == 0) LOG_I("robot_ctrl loop alive");
         /* 遥控器控制输入 (暂不接入) */
         // RemoteControlSet(&chassis_cmd, NULL, &gimbal_cmd);
 

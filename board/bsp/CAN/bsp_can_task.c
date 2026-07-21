@@ -1,6 +1,12 @@
 #include "tx_api.h"
 #include "tx_port.h"
 #include "bsp_can.h"
+#include "ulog_def.h"
+#define LOG_TAG "CAN_RX"
+#define LOG_LVL LOG_LVL_INFO
+#include "ulog_def.h"
+#define LOG_TAG "CAN_RX"
+#define LOG_LVL LOG_LVL_INFO
 #include "bsp_can_task.h"
 #include "bsp_def.h"
 
