@@ -1,7 +1,4 @@
 #include "bsp_can.h"
-#include "ulog_def.h"
-#define LOG_TAG "CAN"
-#define LOG_LVL LOG_LVL_INFO
 #include "bsp_can_task.h"
 #include "bsp_def.h"
 #include <string.h>
@@ -175,12 +172,6 @@ Can_Device *BSP_CAN_Device_Init(Can_Device_Init_Config_s *config)
         HAL_CAN_Start(config->hcan);
 #endif
         bus->initialized = true;
-
-        /* CAN hardware status */
-        CAN_TypeDef *CANx = (CAN_TypeDef *)config->hcan->Instance;
-        LOG_I("CAN TSR=0x%08lx ESR=0x%08lx", CANx->TSR, CANx->ESR);
-        LOG_I("CAN REC=%lu TEC=%lu",
-              (CANx->ESR >> 16) & 0xFF, (CANx->ESR >> 24) & 0xFF);
     }
 
     if (can_dev_find(bus, config->rx_id) != NULL)
