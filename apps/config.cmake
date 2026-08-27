@@ -1,9 +1,14 @@
-# 机器人 & 板型 配置
-# 在这里修改 ROBOT / BOARD 
+﻿
+set(ROBOT "sentry" CACHE STRING "Target robot")
+set_property(CACHE ROBOT PROPERTY STRINGS hero engineer infantry3 infantry4 infantry5 drone sentry darts customcontrol)
+set(BOARD "gimbal" CACHE STRING "Board role")
+set_property(CACHE BOARD PROPERTY STRINGS single gimbal chassis)
 
-# 目标机器人 & 板型
-set(ROBOT "infantry3") # hero / engineer / infantry3 / infantry4 / infantry5 / drone / sentry / darts / customcontrol
-set(BOARD "single")    # single / gimbal / chassis
+# 板型校验
+if(NOT BOARD MATCHES "^(single|gimbal|chassis)$")
+    message(FATAL_ERROR "Unknown BOARD '${BOARD}', expected: single / gimbal / chassis")
+endif()
+
 
 # 加载默认模块配置
 include(${CMAKE_CURRENT_LIST_DIR}/../modules/module_config.cmake)
