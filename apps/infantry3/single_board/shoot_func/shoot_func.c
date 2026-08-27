@@ -43,7 +43,7 @@ void shoot_init(void)
         .motor_init_info = {.motor_type = M3508, .gear_ratio = 19, .max_torque = 6, .torque_constant = 0.0016f},
     };
     // 左摩擦轮
-    friction_config.transport_config.can.tx_id = 6;
+    friction_config.transport_config.can.tx_id = 3;
     friction_l                                 = Motor_DJI_Init(&friction_config);
     if (friction_l == NULL)
     {
@@ -51,7 +51,7 @@ void shoot_init(void)
         return;
     }
     // 右摩擦轮
-    friction_config.transport_config.can.tx_id     = 8; // 右摩擦轮,改txid和方向就行
+    friction_config.transport_config.can.tx_id     = 2; // 右摩擦轮,改txid和方向就行
     friction_config.offline_init_config.name       = "3508_2";
     friction_config.offline_init_config.beep_times = 6;
     friction_r                                     = Motor_DJI_Init(&friction_config);
