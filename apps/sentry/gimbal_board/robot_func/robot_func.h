@@ -10,7 +10,8 @@
 #define _ROBOT_FUNC_H_
 
 #include "sentry_def.h"
-#include "module_pccomm.h"
+#include "module_vision.h"
+#include "module_nav.h"
 #include "module_ins.h"
 /**
  * @brief 计算相对于对齐角度的最小旋转角度，返回编码器差值
@@ -37,6 +38,6 @@ void RemoteControlSet(Chassis_Ctrl_Cmd_t *Chassis_Ctrl, Shoot_Ctrl_Cmd_t *Shoot_
  * @param nav_packet 接收到的导航数据包指针
  */
 void gimbal_auto_func(Chassis_Ctrl_Cmd_t *Chassis_Ctrl, Shoot_Ctrl_Cmd_t *Shoot_Ctrl, Gimbal_Ctrl_Cmd_t *Gimbal_Ctrl, const Ins_t *Ins,
-                      const ReceivePacket *receive_packet, const NavPacket *nav_packet);
+                      const VisionReceivePacket *receive_packet, const NavReceivePacket *nav_packet);
 
 #endif // _ROBOT_FUNC_H_
