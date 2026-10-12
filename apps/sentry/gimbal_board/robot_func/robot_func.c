@@ -106,8 +106,7 @@ void RemoteControlSet(Chassis_Ctrl_Cmd_t *Chassis_Ctrl, Shoot_Ctrl_Cmd_t *Shoot_
     }
 }
 
-void gimbal_auto_func(Chassis_Ctrl_Cmd_t *Chassis_Ctrl, Shoot_Ctrl_Cmd_t *Shoot_Ctrl, Gimbal_Ctrl_Cmd_t *Gimbal_Ctrl, const Ins_t *Ins,
-                      const VisionReceivePacket *receive_packet, const NavReceivePacket *nav_packet)
+void gimbal_auto_func(Shoot_Ctrl_Cmd_t *Shoot_Ctrl, Gimbal_Ctrl_Cmd_t *Gimbal_Ctrl, const Ins_t *Ins, const VisionReceivePacket *receive_packet)
 {
     if (Gimbal_Ctrl == NULL || Gimbal_Ctrl->gimbal_mode != gimbal_auto_mode)
     {
@@ -121,9 +120,6 @@ void gimbal_auto_func(Chassis_Ctrl_Cmd_t *Chassis_Ctrl, Shoot_Ctrl_Cmd_t *Shoot_
         Shoot_Ctrl->load_mode    = load_stop;
         return;
     }
-    // 底盘设为自动模式
-    Chassis_Ctrl->chassis_mode = chassis_automode;
-
     if (receive_packet != NULL && SMALL_YAW_PITCH_MIN_ANGLE * DEGREE_2_RAD < -receive_packet->target_pitch &&
         -receive_packet->target_pitch < SMALL_YAW_PITCH_MAX_ANGLE * DEGREE_2_RAD)
     {
@@ -146,8 +142,15 @@ void gimbal_auto_func(Chassis_Ctrl_Cmd_t *Chassis_Ctrl, Shoot_Ctrl_Cmd_t *Shoot_
         Gimbal_Ctrl->auto_search = 1;
         Shoot_Ctrl->load_mode    = load_stop;
     }
+}
 
-    /* 导航 */
+void nav_auto_func(Chassis_Ctrl_Cmd_t *Chassis_Ctrl, const NavReceivePacket *nav_packet)
+{
+    if (Chassis_Ctrl == NULL || Chassis_Ctrl->chassis_mode != chassis_automode)
+    {
+        return;
+    }
+
     if (Module_Nav_Get_offline_state() == STATE_ONLINE && nav_packet != NULL && nav_packet->nav_state == 1)
     {
         Chassis_Ctrl->vx = nav_packet->vx;
