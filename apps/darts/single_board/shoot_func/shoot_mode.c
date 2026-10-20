@@ -2,11 +2,12 @@
  * @Author: abbhhh 804433588@qq.com
  * @Date: 2026-09-20 13:00:00
  * @LastEditors: abbhhh 804433588@qq.com
- * @LastEditTime: 2026-09-20 21:00:00
+ * @LastEditTime: 2026-10-09 17:20:15
  * @FilePath: \mas_embedded_threadx\apps\darts\single_board\shoot_func\shoot_mode.c
  * @Description:
  */
 #include "shoot_mode.h"
+#include "darts_def.h"
 
 #include "bsp_dwt.h"
 #include "main.h"
@@ -25,7 +26,7 @@
 
 static uint64_t delay_start_us;
 static bool     delay_active;
-static const float position_tolerance_rad = 0.2f;
+static const float dm_position_tolerance_rad = 0.030f;  /* 拨盘 DM4310, rad (≈2°), 精度不够改这里 */
 static volatile bool limit_switch_event;
 static volatile bool limit_switch_locked;
 static void         *limit_switch_port;
@@ -42,11 +43,27 @@ static void shoot_mode_limit_switch_callback(void)
     limit_switch_action();
 }
 
-bool shoot_mode_3508_is_arrived(const DJI_Motor_t *motor, float target_angle_rad)
+bool shoot_mode_3508_is_position_arrived(const DJI_Motor_t *motor, float target_angle_rad)
 {
     if (motor == NULL) return false;
 
-    return fabsf(motor->base.measure.total_angle - target_angle_rad) <= position_tolerance_rad &&
+    float error_mm = fabsf(motor->base.measure.total_angle - target_angle_rad) * FRICTION_PULLEY_RADIUS_MM / motor->base.info.gear_ratio;
+    return error_mm <= FRICTION_POSITION_TOLERANCE_MM;
+}
+
+bool shoot_mode_3508_is_stopped(const DJI_Motor_t *motor)
+{
+    if (motor == NULL) return false;
+
+    float speed_mm_s = fabsf(motor->base.measure.speed_rad) * FRICTION_PULLEY_RADIUS_MM / motor->base.info.gear_ratio;
+    return speed_mm_s < FRICTION_SPEED_TOLERANCE_MM_S;
+}
+
+bool shoot_mode_dm_is_arrived(const DM_Motor_t *motor, float target_angle_rad)
+{
+    if (motor == NULL) return false;
+
+    return fabsf(motor->base.measure.total_angle - target_angle_rad) <= dm_position_tolerance_rad &&
            fabsf(motor->base.measure.speed_rad) < 0.2f;
 }
 

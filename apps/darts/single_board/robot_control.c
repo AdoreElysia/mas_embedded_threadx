@@ -41,7 +41,11 @@ static void robot_control_task(ULONG thread_input)
     while (1)
     {
         /* ── 遥控器控制输入 ── */
-        RemoteControlSet(&chassis_cmd, &shoot_cmd, &gimbal_cmd);
+        bool remote_online = RemoteControlSet(&chassis_cmd, &shoot_cmd, &gimbal_cmd);
+
+        /* 执行器先处理掉线，避免视觉通信延迟停机。 */
+        shoot_func(&shoot_cmd, remote_online);
+        gimbal_func(&gimbal_cmd, &yaw_ecd);
 
         /* ── 虚拟串口 (视觉通信) ── */
         const robot_status_t *robot_status = (robot_status_t *)Module_Referee_Get_cmd_data(CMD_ID_ROBOT_STATUS);
@@ -67,12 +71,6 @@ static void robot_control_task(ULONG thread_input)
         send_packet.q[3] = ins->q[3];
         Module_Vision_Send(&send_packet, TX_NO_WAIT);
         receive_packet = Module_Vision_Receive();
-
-        /* ── 云台控制 ── */
-        gimbal_func(&gimbal_cmd, &yaw_ecd);
-
-        /* ── 发射机构控制 ── */
-        shoot_func(&shoot_cmd);
 
         tx_thread_sleep(2);
     }

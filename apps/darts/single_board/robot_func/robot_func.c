@@ -1,4 +1,12 @@
 /*
+ * @Author: abbhhh 804433588@qq.com
+ * @Date: 2026-10-06 14:12:54
+ * @LastEditors: abbhhh 804433588@qq.com
+ * @LastEditTime: 2026-10-09 16:28:03
+ * @FilePath: \mas_embedded_threadx\apps\darts\single_board\robot_func\robot_func.c
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+/*
  * @Description: 机器人通用函数实现模板 (单板)
  *
  * 使用说明:
@@ -26,11 +34,9 @@ int16_t CalcOffsetAngle(float getyawangle)
     return (int16_t)offset_ecd;
 }
 
-void RemoteControlSet(Chassis_Ctrl_Cmd_t *Chassis_Ctrl,
-                      Shoot_Ctrl_Cmd_t  *Shoot_Ctrl,
-                      Gimbal_Ctrl_Cmd_t *Gimbal_Ctrl)
+bool RemoteControlSet(Chassis_Ctrl_Cmd_t *Chassis_Ctrl, Shoot_Ctrl_Cmd_t *Shoot_Ctrl, Gimbal_Ctrl_Cmd_t *Gimbal_Ctrl)
 {
-    if (!Chassis_Ctrl || !Shoot_Ctrl || !Gimbal_Ctrl) return;
+    if (!Chassis_Ctrl || !Shoot_Ctrl || !Gimbal_Ctrl) return false;
 
     uint8_t state = Module_Remote_get_offline_status();
 
@@ -52,21 +58,34 @@ void RemoteControlSet(Chassis_Ctrl_Cmd_t *Chassis_Ctrl,
         Chassis_Ctrl->chassis_mode = chassis_follow_gimbal_yaw;
 
         /* ── 云台控制 ──
-         * CH3: pitch, CH4: yaw 微调 */
+         * CH3: pitch, CH4: yaw。摇杆压过阈值 → 定速往该方向走, 回中即停;
+         * 0.002 = 控制周期 2ms (robot_control.c 的 tx_thread_sleep(2)) */
         Gimbal_Ctrl->gimbal_mode = gimbal_gyro_mode;
-        Gimbal_Ctrl->yaw        -= 0.001f * (float)Module_Remote_get_channel(4);
-        Gimbal_Ctrl->pitch      += 0.001f * (float)Module_Remote_get_channel(3);
+
+        int16_t ch_yaw   = Module_Remote_get_channel(2);
+        int16_t ch_pitch = Module_Remote_get_channel(3);
+
+        if (ch_yaw > GIMBAL_STICK_TH)
+            Gimbal_Ctrl->yaw += GIMBAL_YAW_RATE_DPS * 0.002f;
+        else if (ch_yaw < -GIMBAL_STICK_TH)
+            Gimbal_Ctrl->yaw -= GIMBAL_YAW_RATE_DPS * 0.002f;
+
+        if (ch_pitch > GIMBAL_STICK_TH)
+            Gimbal_Ctrl->pitch += GIMBAL_PITCH_RATE_DPS * 0.002f;
+        else if (ch_pitch < -GIMBAL_STICK_TH)
+            Gimbal_Ctrl->pitch -= GIMBAL_PITCH_RATE_DPS * 0.002f;
 
         /* TODO: 根据拨杆切换云台模式
          * 示例: CH6 上=手动, CH6 中=自动, CH6 下=停止
          */
 
         /* ── 发射控制 ──
-         * TODO: 根据拨杆自定义发射逻辑
-         * 示例: CH5 上=关闭, CH5 中=待机, CH5 下=开启摩擦轮+发射
-         *       CH7 控制连发模式
-         */
-        Shoot_Ctrl->shoot_mode    = shoot_off;
+         * SW1 (CH5): 下拨 = 打一发 (shoot_func 里按下拨边沿触发) */
+        if (Module_Remote_get_channel(5) == SBUS_CHX_DOWN)
+            Shoot_Ctrl->shoot_mode = shoot_on;
+        else
+            Shoot_Ctrl->shoot_mode = shoot_off;
+
         Shoot_Ctrl->friction_mode = friction_off;
         Shoot_Ctrl->load_mode     = load_stop;
     }
@@ -79,4 +98,5 @@ void RemoteControlSet(Chassis_Ctrl_Cmd_t *Chassis_Ctrl,
         Shoot_Ctrl->load_mode      = load_stop;
         memset(Chassis_Ctrl, 0, sizeof(Chassis_Ctrl_Cmd_t));
     }
+    return (state & 0x01U) != 0U;
 }

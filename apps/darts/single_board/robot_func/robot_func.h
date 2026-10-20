@@ -14,7 +14,8 @@
 #ifndef _ROBOT_FUNC_H_
 #define _ROBOT_FUNC_H_
 
-#include "darts_def.h"   /* TODO: 改为 <你的机器人>_def.h */
+#include "darts_def.h" /* TODO: 改为 <你的机器人>_def.h */
+#include <stdbool.h>
 
 /**
  * @brief 计算 yaw 编码器与底盘对齐点的最小旋转差值
@@ -25,9 +26,8 @@ int16_t CalcOffsetAngle(float getyawangle);
 
 /**
  * @brief 遥控器输入 → 底盘/发射/云台 控制命令
+ * @return 本次读取的遥控器在线状态
  */
-void RemoteControlSet(Chassis_Ctrl_Cmd_t *Chassis_Ctrl,
-                      Shoot_Ctrl_Cmd_t  *Shoot_Ctrl,
-                      Gimbal_Ctrl_Cmd_t *Gimbal_Ctrl);
+bool RemoteControlSet(Chassis_Ctrl_Cmd_t *Chassis_Ctrl, Shoot_Ctrl_Cmd_t *Shoot_Ctrl, Gimbal_Ctrl_Cmd_t *Gimbal_Ctrl);
 
 #endif // _ROBOT_FUNC_H_
