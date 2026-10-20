@@ -25,8 +25,8 @@
 static TX_THREAD                  robot_control_thread;
 APPS_STACK_SECTION static uint8_t robot_control_thread_stack[1024];
 
-static ReceivePacket *receive_packet = NULL;
-static SendPacket     send_packet;
+static VisionReceivePacket *receive_packet = NULL;
+static VisionSendPacket     send_packet;
 const static Ins_t   *ins = NULL;
 
 static Gimbal_Ctrl_Cmd_t  gimbal_cmd;
@@ -76,7 +76,7 @@ static void robot_control_task(ULONG thread_input)
     }
 }
 
-void robot_control_init(void)
+int robot_control_init(void)
 {
     UINT status;
 
@@ -85,7 +85,7 @@ void robot_control_init(void)
     if (ins == NULL)
     {
         LOG_E("ins is null");
-        return;
+        return -1;
     }
 
     /* ── 子系统初始化 ── */
@@ -97,8 +97,10 @@ void robot_control_init(void)
     if (status != TX_SUCCESS)
     {
         LOG_E("robot_control_task failed!");
-        return;
+        return -1;
     }
 
     LOG_I("robot_control init success!");
+
+    return 0;
 }
